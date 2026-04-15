@@ -180,6 +180,217 @@
 .jscfr-fg-table .jscfr-col-shortcode { width: 200px; }
 .jscfr-fg-table .jscfr-col-date { width: 140px; }
 
+/* -- Subsubsub nav -- */
+.jscfr-list-wrap .subsubsub {
+    font-size: 13px;
+    margin: 20px 0 10px;
+    color: #64748b;
+}
+.jscfr-list-wrap .subsubsub a {
+    color: #64748b;
+    text-decoration: none;
+    padding: 4px 10px;
+    border-radius: 6px;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+.jscfr-list-wrap .subsubsub a:hover { background: #f1f5f9; color: #0f172a; }
+.jscfr-list-wrap .subsubsub a.current {
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-weight: 600;
+}
+.jscfr-list-wrap .subsubsub .count { color: inherit; opacity: 0.7; }
+
+/* -- Search box -- */
+.jscfr-list-wrap .search-box input[type="search"] {
+    border: 1px solid #e2e8f0;
+    border-radius: 7px;
+    padding: 6px 10px;
+    font-size: 13px;
+    min-width: 200px;
+    background: #fff;
+    box-shadow: none;
+}
+.jscfr-list-wrap .search-box input[type="search"]:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    outline: none;
+}
+.jscfr-list-wrap .search-box .button {
+    border-radius: 7px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #334155;
+    font-weight: 500;
+    height: auto;
+    padding: 6px 14px;
+}
+.jscfr-list-wrap .search-box .button:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+/* -- Bulk actions bar -- */
+.jscfr-list-wrap .tablenav {
+    background: transparent;
+    height: auto;
+    padding: 12px 0;
+    margin: 0;
+}
+.jscfr-list-wrap .tablenav select {
+    border: 1px solid #e2e8f0;
+    border-radius: 7px;
+    padding: 6px 10px;
+    font-size: 13px;
+    background: #fff;
+    color: #334155;
+    height: auto;
+    min-height: auto;
+}
+.jscfr-list-wrap .tablenav select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    outline: none;
+}
+.jscfr-list-wrap .tablenav .button.action {
+    border-radius: 7px;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    color: #334155;
+    font-weight: 500;
+    height: auto;
+    padding: 6px 14px;
+    min-height: auto;
+    line-height: 1.4;
+}
+.jscfr-list-wrap .tablenav .button.action:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+.jscfr-list-wrap .tablenav .displaying-num {
+    color: #94a3b8;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 500;
+}
+
+/* -- Table container -- */
+.jscfr-fg-table.wp-list-table {
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    border-spacing: 0;
+    overflow: hidden;
+}
+.jscfr-fg-table.wp-list-table thead th,
+.jscfr-fg-table.wp-list-table thead td,
+.jscfr-fg-table.wp-list-table tfoot th,
+.jscfr-fg-table.wp-list-table tfoot td {
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 12px 14px;
+}
+.jscfr-fg-table.wp-list-table tfoot th,
+.jscfr-fg-table.wp-list-table tfoot td {
+    border-top: 1px solid #e2e8f0;
+    border-bottom: none;
+}
+.jscfr-fg-table.wp-list-table tbody td,
+.jscfr-fg-table.wp-list-table tbody th {
+    padding: 14px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+    color: #334155;
+    font-size: 13px;
+    background: #fff;
+}
+.jscfr-fg-table.wp-list-table tbody tr:last-child td,
+.jscfr-fg-table.wp-list-table tbody tr:last-child th {
+    border-bottom: none;
+}
+.jscfr-fg-table.wp-list-table tbody tr:hover td,
+.jscfr-fg-table.wp-list-table tbody tr:hover th {
+    background: #f8fafc;
+}
+
+/* -- Title column (modernized) -- */
+.jscfr-col-title .row-title {
+    color: #0f172a;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    transition: color 0.12s ease;
+}
+.jscfr-col-title .row-title:hover { color: #2563eb; }
+.jscfr-col-title .row-actions {
+    font-size: 12px;
+    margin-top: 4px;
+}
+.jscfr-col-title .row-actions a {
+    color: #64748b;
+    text-decoration: none;
+    transition: color 0.12s ease;
+}
+.jscfr-col-title .row-actions a:hover { color: #2563eb; }
+.jscfr-col-title .row-actions .trash a,
+.jscfr-col-title .row-actions .delete a { color: #b91c1c; }
+.jscfr-col-title .row-actions .trash a:hover,
+.jscfr-col-title .row-actions .delete a:hover { color: #7f1d1d; }
+
+/* -- Show For / Location as subtle pills -- */
+.jscfr-fg-table .jscfr-col-showfor,
+.jscfr-fg-table .jscfr-col-location {
+    color: #475569;
+}
+
+/* -- Shortcode input (modernized) -- */
+.jscfr-shortcode-input {
+    width: 100%;
+    max-width: 180px;
+    font-size: 12px;
+    font-family: 'SF Mono', 'Cascadia Code', Consolas, monospace;
+    padding: 6px 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #f8fafc;
+    color: #0f172a;
+    cursor: text;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.jscfr-shortcode-input:focus {
+    border-color: #2563eb;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    background: #fff;
+}
+
+/* -- Date / Published column as a status badge -- */
+.jscfr-col-date {
+    font-size: 12px;
+    font-weight: 600;
+}
+.jscfr-fg-table tbody .jscfr-col-date {
+    color: #059669;
+}
+.jscfr-fg-table tbody .jscfr-row-inactive .jscfr-col-date {
+    color: #94a3b8;
+}
+
+/* -- Inactive row (modern) -- */
+.jscfr-fg-table .jscfr-row-inactive td,
+.jscfr-fg-table .jscfr-row-inactive th { opacity: 0.7; }
+.jscfr-fg-table .jscfr-row-inactive:hover td,
+.jscfr-fg-table .jscfr-row-inactive:hover th { opacity: 1; }
+
+/* -- Checkbox column -- */
+.jscfr-fg-table .check-column input[type="checkbox"] { margin: 0; }
+
 /* -- Status toggle column -- */
 .jscfr-toggle-switch {
     position: relative;
@@ -217,7 +428,7 @@
     box-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 .jscfr-toggle-switch input:checked + .jscfr-toggle-slider-sm {
-    background: #0073aa;
+    background: #2563eb;
 }
 .jscfr-toggle-switch input:checked + .jscfr-toggle-slider-sm::after {
     transform: translateX(16px);
