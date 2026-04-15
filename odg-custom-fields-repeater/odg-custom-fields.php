@@ -1102,6 +1102,18 @@ if ( ! class_exists( 'JSCFR_Plugin' ) ) {
     }
 
     JSCFR_Plugin::get_instance();
+
+    /**
+     * Clear plugin-scheduled cron events on deactivation so they don't fire
+     * with a missing callback (which would log a PHP warning).
+     */
+    register_deactivation_hook( __FILE__, 'jscfr_plugin_deactivate' );
+}
+
+if ( ! function_exists( 'jscfr_plugin_deactivate' ) ) {
+    function jscfr_plugin_deactivate() {
+        wp_clear_scheduled_hook( 'jscfr_v5_migrate_batch' );
+    }
 }
 
 /* ------------------------------------------------------------------ */

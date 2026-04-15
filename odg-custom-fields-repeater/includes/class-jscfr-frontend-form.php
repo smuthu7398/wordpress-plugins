@@ -750,9 +750,15 @@ if ( ! class_exists( 'JSCFR_Frontend_Form' ) ) {
                 wp_send_json_error( array( 'message' => __( 'Invalid post type.', 'jscfr' ) ) );
             }
 
-            // Allowed post statuses
+            // Allowed post statuses (anonymous users limited to draft/pending)
             $allowed_statuses = array( 'draft', 'pending', 'publish', 'private' );
             if ( ! in_array( $post_status, $allowed_statuses, true ) ) {
+                $post_status = 'draft';
+            }
+            if ( ! is_user_logged_in() && in_array( $post_status, array( 'publish', 'private' ), true ) ) {
+                $post_status = 'pending';
+            }
+            if ( 'private' === $post_status && is_user_logged_in() && ! current_user_can( 'publish_posts' ) ) {
                 $post_status = 'draft';
             }
 
@@ -763,7 +769,8 @@ if ( ! class_exists( 'JSCFR_Frontend_Form' ) ) {
                 if ( ! $existing_post || $existing_post->post_type !== $post_type ) {
                     wp_send_json_error( array( 'message' => __( 'Post not found.', 'jscfr' ) ) );
                 }
-                if ( is_user_logged_in() && ! current_user_can( 'edit_post', $post_id ) ) {
+                // Updates always require an authenticated user with edit cap — never allow anonymous edits.
+                if ( ! is_user_logged_in() || ! current_user_can( 'edit_post', $post_id ) ) {
                     wp_send_json_error( array( 'message' => __( 'You do not have permission to edit this post.', 'jscfr' ) ) );
                 }
             } else {

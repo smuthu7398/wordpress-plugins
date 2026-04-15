@@ -1164,16 +1164,21 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
         /* ============================================================= */
         public function ajax_search_posts() {
             check_ajax_referer( JSCFR_BUILDER_NONCE, 'nonce' );
+            if ( ! current_user_can( 'edit_posts' ) ) {
+                wp_send_json_error( __( 'Unauthorized', 'jscfr' ) );
+            }
 
             $search     = isset( $_POST['search'] ) ? sanitize_text_field( $_POST['search'] ) : '';
             $post_types = isset( $_POST['post_type'] ) ? array_map( 'sanitize_key', (array) $_POST['post_type'] ) : array( 'post', 'page' );
             $exclude    = isset( $_POST['exclude'] ) ? array_map( 'absint', (array) $_POST['exclude'] ) : array();
 
+            $post_status = current_user_can( 'read_private_posts' ) ? 'any' : array( 'publish' );
+
             $args = array(
                 'post_type'      => $post_types,
                 'posts_per_page' => 20,
                 's'              => $search,
-                'post_status'    => 'any',
+                'post_status'    => $post_status,
                 'orderby'        => 'title',
                 'order'          => 'ASC',
             );
@@ -1203,6 +1208,9 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
         /* ============================================================= */
         public function ajax_search_users() {
             check_ajax_referer( JSCFR_BUILDER_NONCE, 'nonce' );
+            if ( ! current_user_can( 'list_users' ) ) {
+                wp_send_json_error( __( 'Unauthorized', 'jscfr' ) );
+            }
 
             $search = isset( $_POST['search'] ) ? sanitize_text_field( $_POST['search'] ) : '';
             $roles  = isset( $_POST['role'] ) ? array_map( 'sanitize_key', (array) $_POST['role'] ) : array();
@@ -1216,14 +1224,18 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
                 $args['role__in'] = $roles;
             }
 
-            $results = array();
-            $users = get_users( $args );
+            $can_see_email = current_user_can( 'edit_users' );
+            $results       = array();
+            $users         = get_users( $args );
             foreach ( $users as $user ) {
-                $results[] = array(
+                $row = array(
                     'id'   => $user->ID,
                     'name' => $user->display_name,
-                    'email' => $user->user_email,
                 );
+                if ( $can_see_email ) {
+                    $row['email'] = $user->user_email;
+                }
+                $results[] = $row;
             }
 
             wp_send_json_success( $results );
@@ -1234,6 +1246,9 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
         /* ============================================================= */
         public function ajax_search_terms() {
             check_ajax_referer( JSCFR_BUILDER_NONCE, 'nonce' );
+            if ( ! current_user_can( 'edit_posts' ) ) {
+                wp_send_json_error( __( 'Unauthorized', 'jscfr' ) );
+            }
 
             $search   = isset( $_POST['search'] ) ? sanitize_text_field( $_POST['search'] ) : '';
             $taxonomy = isset( $_POST['taxonomy'] ) ? sanitize_key( $_POST['taxonomy'] ) : 'category';
