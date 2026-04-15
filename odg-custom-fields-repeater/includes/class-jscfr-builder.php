@@ -419,7 +419,7 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
             }
             if ( ! $fg ) {
                 $fg = array(
-                    'id'             => 'fg_' . wp_generate_password( 8, false ),
+                    'id'             => 'fg_' . strtolower( wp_generate_password( 8, false ) ),
                     'title'          => '',
                     'tabs'           => array(),
                     'location_rules' => array(
@@ -861,7 +861,7 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
             $fg = ( 'new' !== $fg_id ) ? JSCFR_Plugin::get_field_group( $fg_id ) : null;
             if ( ! $fg ) {
                 $fg = array(
-                    'id'             => 'fg_' . wp_generate_password( 8, false ),
+                    'id'             => 'fg_' . strtolower( wp_generate_password( 8, false ) ),
                     'title'          => '',
                     'tabs'           => array(),
                     'location_rules' => array( array( array( 'param' => 'post_type', 'operator' => 'is_equal_to', 'value' => 'post' ) ) ),
@@ -1101,7 +1101,7 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
             if ( ! $fg ) wp_send_json_error( 'Not found' );
 
             $new = $fg;
-            $new['id']    = 'fg_' . wp_generate_password( 8, false );
+            $new['id']    = 'fg_' . strtolower( wp_generate_password( 8, false ) );
             $new['title'] = $fg['title'] . ' (Copy)';
             $new = $this->regenerate_ids( $new );
             JSCFR_Plugin::save_field_group( $new );
@@ -1150,7 +1150,7 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
                 if ( ! is_array( $fg ) || empty( $fg['id'] ) ) continue;
                 $clean = $this->sanitize_field_group( $fg );
                 // Generate new ID to avoid overwriting
-                $clean['id'] = 'fg_' . wp_generate_password( 8, false );
+                $clean['id'] = 'fg_' . strtolower( wp_generate_password( 8, false ) );
                 $clean = $this->regenerate_ids( $clean );
                 JSCFR_Plugin::save_field_group( $clean );
                 $count++;
@@ -1520,19 +1520,19 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
 
         private function sanitize_id( $id, $prefix = 'jscfr' ) {
             $id = sanitize_key( $id );
-            return $id ? $id : $prefix . '_' . wp_generate_password( 8, false );
+            return $id ? $id : $prefix . '_' . strtolower( wp_generate_password( 8, false ) );
         }
 
         private function regenerate_ids( $fg ) {
             if ( isset( $fg['tabs'] ) ) {
                 foreach ( $fg['tabs'] as &$tab ) {
-                    $tab['id'] = 'tab_' . wp_generate_password( 8, false );
+                    $tab['id'] = 'tab_' . strtolower( wp_generate_password( 8, false ) );
                     if ( isset( $tab['groups'] ) ) {
                         foreach ( $tab['groups'] as &$group ) {
-                            $group['id'] = 'grp_' . wp_generate_password( 8, false );
+                            $group['id'] = 'grp_' . strtolower( wp_generate_password( 8, false ) );
                             if ( isset( $group['fields'] ) ) {
                                 foreach ( $group['fields'] as &$field ) {
-                                    $field['id'] = 'fld_' . wp_generate_password( 8, false );
+                                    $field['id'] = 'fld_' . strtolower( wp_generate_password( 8, false ) );
                                 }
                             }
                         }
