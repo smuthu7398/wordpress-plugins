@@ -3,7 +3,7 @@
  * Plugin Name: Odg Custom Fields Repeater
  * Plugin URI:  https://developer.suspended.suspended
  * Description: ACF-style custom fields plugin. Build Field Groups with Tabs, Groups (clonable repeater), Fields, plus location rules and presentation settings.
- * Version:     5.0.0
+ * Version:     5.5.0
  * Author:      Developer
  * Author URI:  https://developer.suspended.suspended
  * License:     GPL-2.0-or-later

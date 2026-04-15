@@ -475,17 +475,26 @@ if ( ! class_exists( 'JSCFR_Options_Page' ) ) {
             }
 
             $slug = isset( $_POST['jscfr_options_slug'] ) ? sanitize_key( $_POST['jscfr_options_slug'] ) : '';
-            $raw  = isset( $_POST['jscfr_data'] ) ? $_POST['jscfr_data'] : array();
+            $raw  = isset( $_POST['jscfr_data'] ) ? wp_unslash( $_POST['jscfr_data'] ) : array();
 
             $existing = get_option( JSCFR_OPTIONS_DATA_KEY, array() );
             if ( ! is_array( $existing ) ) {
                 $existing = array();
             }
 
-            // Merge submitted data
+            // Merge submitted data with field-type-aware sanitization
             if ( is_array( $raw ) ) {
+                $fgs_by_id = array();
+                foreach ( JSCFR_Plugin::get_config() as $fg ) {
+                    if ( ! empty( $fg['id'] ) ) {
+                        $fgs_by_id[ $fg['id'] ] = $fg;
+                    }
+                }
+                $metabox = JSCFR_Metabox::get_instance();
                 foreach ( $raw as $fg_id => $fg_data ) {
-                    $existing[ $fg_id ] = $this->sanitize_options_data( $fg_data );
+                    $fg_id_clean = sanitize_key( $fg_id );
+                    if ( ! isset( $fgs_by_id[ $fg_id_clean ] ) || ! is_array( $fg_data ) ) continue;
+                    $existing[ $fg_id_clean ] = $this->sanitize_options_fg_data( $fg_data, $fgs_by_id[ $fg_id_clean ], $metabox );
                 }
             }
 
@@ -502,15 +511,34 @@ if ( ! class_exists( 'JSCFR_Options_Page' ) ) {
         }
 
         /**
-         * Recursively sanitize options data.
+         * Sanitize a field group's submitted data using field-type-aware logic.
+         * Walks the configured tabs/groups/fields tree and delegates leaf values
+         * to JSCFR_Metabox::sanitize_field_value() so WYSIWYG, URL, email, number,
+         * and other typed fields are preserved correctly.
          */
-        private function sanitize_options_data( $data ) {
-            if ( ! is_array( $data ) ) {
-                return sanitize_text_field( $data );
-            }
+        private function sanitize_options_fg_data( $data, $fg, $metabox ) {
             $clean = array();
-            foreach ( $data as $key => $val ) {
-                $clean[ sanitize_key( $key ) ] = is_array( $val ) ? $this->sanitize_options_data( $val ) : sanitize_text_field( $val );
+            if ( empty( $fg['tabs'] ) || ! is_array( $data ) ) {
+                return $clean;
+            }
+            foreach ( $fg['tabs'] as $tab ) {
+                $tab_id = isset( $tab['id'] ) ? $tab['id'] : '';
+                if ( ! $tab_id || empty( $tab['groups'] ) || empty( $data[ $tab_id ] ) || ! is_array( $data[ $tab_id ] ) ) continue;
+                foreach ( $tab['groups'] as $group ) {
+                    $gid = isset( $group['id'] ) ? $group['id'] : '';
+                    if ( ! $gid || empty( $group['fields'] ) || empty( $data[ $tab_id ][ $gid ] ) || ! is_array( $data[ $tab_id ][ $gid ] ) ) continue;
+                    $rows = $data[ $tab_id ][ $gid ];
+                    unset( $rows['__IDX__'] );
+                    foreach ( $rows as $idx => $row ) {
+                        if ( ! is_array( $row ) ) continue;
+                        $idx_key = sanitize_key( $idx );
+                        foreach ( $group['fields'] as $field ) {
+                            $fid = isset( $field['id'] ) ? $field['id'] : '';
+                            if ( ! $fid || ! array_key_exists( $fid, $row ) ) continue;
+                            $clean[ $tab_id ][ $gid ][ $idx_key ][ $fid ] = $metabox->sanitize_field_value( $row[ $fid ], $field );
+                        }
+                    }
+                }
             }
             return $clean;
         }
