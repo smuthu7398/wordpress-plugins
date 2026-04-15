@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Odg Custom Fields Repeater
  * Plugin URI:  https://odigma.ooo/wordpress/plugins
- * Description: ACF-style custom fields plugin. Build Field Groups with Tabs, Groups (clonable repeater), Fields, plus location rules and presentation settings.
+ * Description: Build custom fields for posts, pages, users, taxonomies, comments, and options screens.
  * Version:     5.5.0
  * Author:      Developer
  * Author URI:  https://odigma.ooo/wordpress/plugins
