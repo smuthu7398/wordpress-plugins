@@ -121,18 +121,41 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
             ?>
             <div class="wrap jscfr-builder-wrap jscfr-list-wrap">
 
-                <h1 class="wp-heading-inline"><?php esc_html_e( 'Field Groups', 'jscfr' ); ?></h1>
-                <a href="<?php echo esc_url( $edit_url . '&fg_id=new' ); ?>" class="page-title-action"><?php esc_html_e( 'Add New', 'jscfr' ); ?></a>
-                <a href="<?php echo esc_url( $ie_url ); ?>" class="page-title-action"><?php esc_html_e( 'Import', 'jscfr' ); ?></a>
+                <div class="jscfr-list-header">
+                    <div class="jscfr-list-header-text">
+                        <h1 class="jscfr-list-title"><?php esc_html_e( 'Field Groups', 'jscfr' ); ?></h1>
+                        <p class="jscfr-list-subtitle"><?php esc_html_e( 'Create, organize, and manage your custom field groups.', 'jscfr' ); ?></p>
+                    </div>
+                    <div class="jscfr-list-header-actions">
+                        <a href="<?php echo esc_url( $ie_url ); ?>" class="jscfr-list-btn jscfr-list-btn--ghost">
+                            <span class="dashicons dashicons-upload"></span>
+                            <?php esc_html_e( 'Import', 'jscfr' ); ?>
+                        </a>
+                        <a href="<?php echo esc_url( $edit_url . '&fg_id=new' ); ?>" class="jscfr-list-btn jscfr-list-btn--primary">
+                            <span class="dashicons dashicons-plus-alt2"></span>
+                            <?php esc_html_e( 'Add New', 'jscfr' ); ?>
+                        </a>
+                    </div>
+                </div>
                 <hr class="wp-header-end">
 
                 <?php if ( empty( $config ) ) : ?>
                     <div class="jscfr-empty-state">
-                        <span class="dashicons dashicons-editor-table jscfr-empty-icon"></span>
-                        <p><?php esc_html_e( 'No field groups yet.', 'jscfr' ); ?></p>
-                        <a href="<?php echo esc_url( $edit_url . '&fg_id=new' ); ?>" class="page-title-action" style="float:none;display:inline-block;">
-                            <?php esc_html_e( 'Create Your First Field Group', 'jscfr' ); ?>
-                        </a>
+                        <div class="jscfr-empty-icon-wrap">
+                            <span class="dashicons dashicons-editor-table jscfr-empty-icon"></span>
+                        </div>
+                        <h2 class="jscfr-empty-title"><?php esc_html_e( 'No field groups yet', 'jscfr' ); ?></h2>
+                        <p class="jscfr-empty-desc"><?php esc_html_e( 'Build your first field group to start attaching custom fields to posts, pages, users, taxonomies, and more.', 'jscfr' ); ?></p>
+                        <div class="jscfr-empty-actions">
+                            <a href="<?php echo esc_url( $edit_url . '&fg_id=new' ); ?>" class="jscfr-list-btn jscfr-list-btn--primary">
+                                <span class="dashicons dashicons-plus-alt2"></span>
+                                <?php esc_html_e( 'Create Your First Field Group', 'jscfr' ); ?>
+                            </a>
+                            <a href="<?php echo esc_url( $ie_url ); ?>" class="jscfr-list-btn jscfr-list-btn--ghost">
+                                <span class="dashicons dashicons-upload"></span>
+                                <?php esc_html_e( 'Import from JSON', 'jscfr' ); ?>
+                            </a>
+                        </div>
                     </div>
                 <?php else : ?>
 
