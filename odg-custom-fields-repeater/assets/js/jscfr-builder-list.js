@@ -20,22 +20,50 @@
             $('#jscfr-cb-all, #jscfr-cb-all-bottom').prop('checked', total === checked);
         });
 
-        /* Delete (Trash) */
-        $(document).on('click.jscfr', '.jscfr-action-delete', function (e) {
+        /* Trash (soft delete) */
+        $(document).on('click.jscfr', '.jscfr-action-trash', function (e) {
             e.preventDefault();
             if (!confirm(L.confirm_delete)) return;
+            var $tr = $(this).closest('tr');
+            var id = $tr.data('fg-id') || $(this).data('id');
+            $.post(L.ajax_url, { action: 'jscfr_trash_field_group', nonce: L.nonce, fg_id: id })
+                .done(function (res) {
+                    if (res.success) {
+                        $tr.fadeOut(300, function () { window.location.reload(); });
+                    } else {
+                        alert('Trash failed: ' + (res.data || 'Unknown error'));
+                    }
+                });
+        });
+
+        /* Restore from trash */
+        $(document).on('click.jscfr', '.jscfr-action-restore', function (e) {
+            e.preventDefault();
+            var $tr = $(this).closest('tr');
+            var id = $tr.data('fg-id') || $(this).data('id');
+            $.post(L.ajax_url, { action: 'jscfr_restore_field_group', nonce: L.nonce, fg_id: id })
+                .done(function (res) {
+                    if (res.success) {
+                        $tr.fadeOut(300, function () { window.location.reload(); });
+                    } else {
+                        alert('Restore failed: ' + (res.data || 'Unknown error'));
+                    }
+                });
+        });
+
+        /* Delete permanently */
+        $(document).on('click.jscfr', '.jscfr-action-delete-permanently', function (e) {
+            e.preventDefault();
+            if (!confirm(L.confirm_delete_permanently)) return;
             var $tr = $(this).closest('tr');
             var id = $tr.data('fg-id') || $(this).data('id');
             $.post(L.ajax_url, { action: 'jscfr_delete_field_group', nonce: L.nonce, fg_id: id })
                 .done(function (res) {
                     if (res.success) {
-                        $tr.fadeOut(300, function () { $(this).remove(); });
+                        $tr.fadeOut(300, function () { window.location.reload(); });
                     } else {
                         alert('Delete failed: ' + (res.data || 'Unknown error'));
                     }
-                })
-                .fail(function (xhr) {
-                    alert('Delete request failed: ' + xhr.status + ' ' + xhr.statusText);
                 });
         });
 
@@ -99,17 +127,26 @@
             });
             if (!ids.length) { alert('Select at least one field group.'); return; }
 
-            if (action === 'delete') {
-                if (!confirm(L.confirm_delete)) return;
-                var deleted = 0;
+            var bulkEndpoint = null;
+            var confirmMsg = null;
+            if (action === 'trash') {
+                bulkEndpoint = 'jscfr_trash_field_group';
+                confirmMsg = L.confirm_delete;
+            } else if (action === 'restore') {
+                bulkEndpoint = 'jscfr_restore_field_group';
+            } else if (action === 'delete_permanently' || action === 'delete') {
+                bulkEndpoint = 'jscfr_delete_field_group';
+                confirmMsg = L.confirm_delete_permanently || L.confirm_delete;
+            }
+
+            if (bulkEndpoint) {
+                if (confirmMsg && !confirm(confirmMsg)) return;
+                var done = 0;
                 $.each(ids, function (_, id) {
-                    $.post(L.ajax_url, { action: 'jscfr_delete_field_group', nonce: L.nonce, fg_id: id }, function (res) {
-                        if (res.success) {
-                            $('tr[data-fg-id="' + id + '"]').fadeOut(300, function () { $(this).remove(); });
-                        }
-                        deleted++;
-                        if (deleted >= ids.length) {
-                            setTimeout(function () { window.location.reload(); }, 500);
+                    $.post(L.ajax_url, { action: bulkEndpoint, nonce: L.nonce, fg_id: id }, function () {
+                        done++;
+                        if (done >= ids.length) {
+                            setTimeout(function () { window.location.reload(); }, 300);
                         }
                     });
                 });
@@ -183,8 +220,10 @@
             }, function (res) {
                 var $st = $('#jscfr-import-status');
                 if (res.success) {
-                    $st.text('Imported ' + res.data.count + ' field group(s). Refreshing...').css('color', 'green');
-                    setTimeout(function () { window.location.reload(); }, 1500);
+                    $st.text('Imported ' + res.data.count + ' field group(s). Opening list...').css('color', 'green');
+                    setTimeout(function () {
+                        window.location.href = 'admin.php?page=jscfr-builder';
+                    }, 1200);
                 } else {
                     $st.text('Error: ' + (res.data || 'Invalid JSON')).css('color', 'red');
                 }

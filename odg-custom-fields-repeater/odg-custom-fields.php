@@ -168,7 +168,7 @@ if ( ! class_exists( 'JSCFR_Plugin' ) ) {
         /* ---------------------------------------------------------- */
         /*  Config helpers                                             */
         /* ---------------------------------------------------------- */
-        public static function get_config() {
+        public static function get_config( $include_trashed = false ) {
             $db     = get_option( JSCFR_OPTION_KEY, array() );
             $db     = is_array( $db ) ? $db : array();
             $merged = $db;
@@ -187,7 +187,13 @@ if ( ! class_exists( 'JSCFR_Plugin' ) ) {
                 }
             }
 
-            return apply_filters( 'jscfr/load_field_groups', $merged );
+            if ( ! $include_trashed ) {
+                $merged = array_values( array_filter( $merged, function( $fg ) {
+                    return ! self::is_trashed( $fg );
+                } ) );
+            }
+
+            return apply_filters( 'jscfr/load_field_groups', $merged, $include_trashed );
         }
 
         public static function save_config( $config ) {
@@ -195,8 +201,8 @@ if ( ! class_exists( 'JSCFR_Plugin' ) ) {
             self::bust_field_index_cache();
         }
 
-        public static function get_field_group( $fg_id ) {
-            foreach ( self::get_config() as $fg ) {
+        public static function get_field_group( $fg_id, $include_trashed = false ) {
+            foreach ( self::get_config( $include_trashed ) as $fg ) {
                 if ( isset( $fg['id'] ) && $fg['id'] === $fg_id ) {
                     return $fg;
                 }
@@ -234,6 +240,28 @@ if ( ! class_exists( 'JSCFR_Plugin' ) ) {
             } ) );
             self::save_config( $config );
             do_action( 'jscfr/delete_field_group', $fg_id );
+        }
+
+        public static function is_trashed( $fg ) {
+            return is_array( $fg ) && ! empty( $fg['trashed_at'] );
+        }
+
+        public static function trash_field_group( $fg_id ) {
+            $fg = self::get_field_group( $fg_id, true );
+            if ( ! $fg ) return false;
+            $fg['trashed_at'] = time();
+            self::save_field_group( $fg );
+            do_action( 'jscfr/trash_field_group', $fg_id );
+            return true;
+        }
+
+        public static function restore_field_group( $fg_id ) {
+            $fg = self::get_field_group( $fg_id, true );
+            if ( ! $fg ) return false;
+            unset( $fg['trashed_at'] );
+            self::save_field_group( $fg );
+            do_action( 'jscfr/restore_field_group', $fg_id );
+            return true;
         }
 
         /* ---------------------------------------------------------- */

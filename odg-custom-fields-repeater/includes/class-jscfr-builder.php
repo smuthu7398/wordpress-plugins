@@ -26,6 +26,8 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
             add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
             add_action( 'wp_ajax_jscfr_save_field_group', array( $this, 'ajax_save_field_group' ) );
             add_action( 'wp_ajax_jscfr_delete_field_group', array( $this, 'ajax_delete_field_group' ) );
+            add_action( 'wp_ajax_jscfr_trash_field_group', array( $this, 'ajax_trash_field_group' ) );
+            add_action( 'wp_ajax_jscfr_restore_field_group', array( $this, 'ajax_restore_field_group' ) );
             add_action( 'wp_ajax_jscfr_duplicate_field_group', array( $this, 'ajax_duplicate_field_group' ) );
             add_action( 'wp_ajax_jscfr_toggle_field_group', array( $this, 'ajax_toggle_field_group' ) );
             add_action( 'wp_ajax_jscfr_export_field_groups', array( $this, 'ajax_export_field_groups' ) );
@@ -78,19 +80,22 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
         /*  LIST PAGE                                                     */
         /* ============================================================= */
         private function render_list_page() {
-            $config   = JSCFR_Plugin::get_config();
+            $config   = JSCFR_Plugin::get_config( true );
             $edit_url = admin_url( 'admin.php?page=jscfr-builder&action=edit' );
             $ie_url   = admin_url( 'admin.php?page=jscfr-import-export' );
 
             // Counts for filter tabs
-            $total_count    = count( $config );
-            $active_count   = 0;
-            $inactive_count = 0;
+            $active_count  = 0;
+            $trashed_count = 0;
+            $all_count     = 0;
             foreach ( $config as $fg ) {
-                if ( ! isset( $fg['settings']['active'] ) || $fg['settings']['active'] ) {
-                    $active_count++;
+                if ( JSCFR_Plugin::is_trashed( $fg ) ) {
+                    $trashed_count++;
                 } else {
-                    $inactive_count++;
+                    $all_count++;
+                    if ( ! isset( $fg['settings']['active'] ) || $fg['settings']['active'] ) {
+                        $active_count++;
+                    }
                 }
             }
 
@@ -101,8 +106,14 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
             // Count displayed items
             $display_count = 0;
             foreach ( $config as $fg ) {
-                $fg_active = isset( $fg['settings']['active'] ) ? $fg['settings']['active'] : true;
-                if ( 'active' === $filter && ! $fg_active ) continue;
+                $is_trashed = JSCFR_Plugin::is_trashed( $fg );
+                if ( 'trash' === $filter ) {
+                    if ( ! $is_trashed ) continue;
+                } else {
+                    if ( $is_trashed ) continue;
+                    $fg_active = isset( $fg['settings']['active'] ) ? $fg['settings']['active'] : true;
+                    if ( 'active' === $filter && ! $fg_active ) continue;
+                }
                 $fg_title = ! empty( $fg['title'] ) ? $fg['title'] : $fg['id'];
                 if ( $search && false === stripos( $fg_title, $search ) && false === stripos( $fg['id'], $search ) ) continue;
                 $display_count++;
@@ -127,8 +138,11 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
 
                     <!-- Filter tabs -->
                     <ul class="subsubsub">
-                        <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=jscfr-builder' ) ); ?>" class="<?php echo 'all' === $filter ? 'current' : ''; ?>"><?php esc_html_e( 'All', 'jscfr' ); ?> <span class="count">(<?php echo intval( $total_count ); ?>)</span></a> |</li>
-                        <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=jscfr-builder&status=active' ) ); ?>" class="<?php echo 'active' === $filter ? 'current' : ''; ?>"><?php esc_html_e( 'Published', 'jscfr' ); ?> <span class="count">(<?php echo intval( $active_count ); ?>)</span></a></li>
+                        <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=jscfr-builder' ) ); ?>" class="<?php echo 'all' === $filter ? 'current' : ''; ?>"><?php esc_html_e( 'All', 'jscfr' ); ?> <span class="count">(<?php echo intval( $all_count ); ?>)</span></a> |</li>
+                        <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=jscfr-builder&status=active' ) ); ?>" class="<?php echo 'active' === $filter ? 'current' : ''; ?>"><?php esc_html_e( 'Published', 'jscfr' ); ?> <span class="count">(<?php echo intval( $active_count ); ?>)</span></a><?php if ( $trashed_count > 0 ) : ?> |<?php endif; ?></li>
+                        <?php if ( $trashed_count > 0 ) : ?>
+                        <li><a href="<?php echo esc_url( admin_url( 'admin.php?page=jscfr-builder&status=trash' ) ); ?>" class="<?php echo 'trash' === $filter ? 'current' : ''; ?>"><?php esc_html_e( 'Trash', 'jscfr' ); ?> <span class="count">(<?php echo intval( $trashed_count ); ?>)</span></a></li>
+                        <?php endif; ?>
                     </ul>
 
                     <!-- Search box -->
@@ -148,8 +162,13 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
                         <div class="alignleft actions bulkactions">
                             <select id="jscfr-bulk-action-top">
                                 <option value="-1"><?php esc_html_e( 'Bulk actions', 'jscfr' ); ?></option>
-                                <option value="delete"><?php esc_html_e( 'Delete', 'jscfr' ); ?></option>
-                                <option value="export"><?php esc_html_e( 'Export', 'jscfr' ); ?></option>
+                                <?php if ( 'trash' === $filter ) : ?>
+                                    <option value="restore"><?php esc_html_e( 'Restore', 'jscfr' ); ?></option>
+                                    <option value="delete_permanently"><?php esc_html_e( 'Delete Permanently', 'jscfr' ); ?></option>
+                                <?php else : ?>
+                                    <option value="trash"><?php esc_html_e( 'Move to Trash', 'jscfr' ); ?></option>
+                                    <option value="export"><?php esc_html_e( 'Export', 'jscfr' ); ?></option>
+                                <?php endif; ?>
                             </select>
                             <button type="button" class="button action jscfr-bulk-apply" data-select="#jscfr-bulk-action-top"><?php esc_html_e( 'Apply', 'jscfr' ); ?></button>
                         </div>
@@ -173,14 +192,20 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
                         </thead>
                         <tbody id="jscfr-fg-list">
                         <?php foreach ( $config as $idx => $fg ) :
-                            $fg_id    = $fg['id'];
-                            $title    = ! empty( $fg['title'] ) ? $fg['title'] : __( '(no title)', 'jscfr' );
-                            $active   = isset( $fg['settings']['active'] ) ? $fg['settings']['active'] : true;
-                            $show_for = $this->get_show_for( $fg );
-                            $location = $this->get_location_label( $fg );
+                            $fg_id      = $fg['id'];
+                            $title      = ! empty( $fg['title'] ) ? $fg['title'] : __( '(no title)', 'jscfr' );
+                            $active     = isset( $fg['settings']['active'] ) ? $fg['settings']['active'] : true;
+                            $is_trashed = JSCFR_Plugin::is_trashed( $fg );
+                            $show_for   = $this->get_show_for( $fg );
+                            $location   = $this->get_location_label( $fg );
 
                             // Filter by status
-                            if ( 'active' === $filter && ! $active ) continue;
+                            if ( 'trash' === $filter ) {
+                                if ( ! $is_trashed ) continue;
+                            } else {
+                                if ( $is_trashed ) continue;
+                                if ( 'active' === $filter && ! $active ) continue;
+                            }
 
                             // Filter by search
                             if ( $search && false === stripos( $title, $search ) && false === stripos( $fg_id, $search ) ) continue;
@@ -196,13 +221,19 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
                                     </label>
                                 </td>
                                 <td class="jscfr-col-title column-primary">
-                                    <strong><a href="<?php echo esc_url( $edit_url . '&fg_id=' . $fg_id ); ?>" class="row-title"><?php echo esc_html( $title ); ?></a></strong>
+                                    <strong><?php if ( $is_trashed ) : ?><?php echo esc_html( $title ); ?><?php else : ?><a href="<?php echo esc_url( $edit_url . '&fg_id=' . $fg_id ); ?>" class="row-title"><?php echo esc_html( $title ); ?></a><?php endif; ?></strong>
                                     <div class="row-actions">
+                                    <?php if ( $is_trashed ) : ?>
+                                        <span class="untrash"><a href="#" class="jscfr-action-restore" data-id="<?php echo esc_attr( $fg_id ); ?>"><?php esc_html_e( 'Restore', 'jscfr' ); ?></a></span>
+                                        <span class="sep"> | </span>
+                                        <span class="delete"><a href="#" class="jscfr-action-delete-permanently" data-id="<?php echo esc_attr( $fg_id ); ?>"><?php esc_html_e( 'Delete Permanently', 'jscfr' ); ?></a></span>
+                                    <?php else : ?>
                                         <span class="edit"><a href="<?php echo esc_url( $edit_url . '&fg_id=' . $fg_id ); ?>"><?php esc_html_e( 'Edit', 'jscfr' ); ?></a></span>
                                         <span class="sep"> | </span>
                                         <span class="duplicate"><a href="#" class="jscfr-action-duplicate" data-id="<?php echo esc_attr( $fg_id ); ?>"><?php esc_html_e( 'Duplicate', 'jscfr' ); ?></a></span>
                                         <span class="sep"> | </span>
-                                        <span class="trash"><a href="#" class="jscfr-action-delete" data-id="<?php echo esc_attr( $fg_id ); ?>"><?php esc_html_e( 'Trash', 'jscfr' ); ?></a></span>
+                                        <span class="trash"><a href="#" class="jscfr-action-trash" data-id="<?php echo esc_attr( $fg_id ); ?>"><?php esc_html_e( 'Trash', 'jscfr' ); ?></a></span>
+                                    <?php endif; ?>
                                     </div>
                                 </td>
                                 <td class="jscfr-col-showfor"><?php echo esc_html( $show_for ); ?></td>
@@ -234,8 +265,13 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
                         <div class="alignleft actions bulkactions">
                             <select id="jscfr-bulk-action-bottom">
                                 <option value="-1"><?php esc_html_e( 'Bulk actions', 'jscfr' ); ?></option>
-                                <option value="delete"><?php esc_html_e( 'Delete', 'jscfr' ); ?></option>
-                                <option value="export"><?php esc_html_e( 'Export', 'jscfr' ); ?></option>
+                                <?php if ( 'trash' === $filter ) : ?>
+                                    <option value="restore"><?php esc_html_e( 'Restore', 'jscfr' ); ?></option>
+                                    <option value="delete_permanently"><?php esc_html_e( 'Delete Permanently', 'jscfr' ); ?></option>
+                                <?php else : ?>
+                                    <option value="trash"><?php esc_html_e( 'Move to Trash', 'jscfr' ); ?></option>
+                                    <option value="export"><?php esc_html_e( 'Export', 'jscfr' ); ?></option>
+                                <?php endif; ?>
                             </select>
                             <button type="button" class="button action jscfr-bulk-apply" data-select="#jscfr-bulk-action-bottom"><?php esc_html_e( 'Apply', 'jscfr' ); ?></button>
                         </div>
@@ -837,9 +873,10 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
             if ( 'cf-builder_page_jscfr-import-export' === $hook ) {
                 wp_enqueue_script( 'jscfr-builder-list-js', JSCFR_PLUGIN_URL . 'assets/js/jscfr-builder-list.js', array( 'jquery' ), JSCFR_VERSION, true );
                 wp_localize_script( 'jscfr-builder-list-js', 'jscfr_list', array(
-                    'ajax_url'       => admin_url( 'admin-ajax.php' ),
-                    'nonce'          => wp_create_nonce( JSCFR_BUILDER_NONCE ),
-                    'confirm_delete' => __( 'Delete this field group? This cannot be undone.', 'jscfr' ),
+                    'ajax_url'                   => admin_url( 'admin-ajax.php' ),
+                    'nonce'                      => wp_create_nonce( JSCFR_BUILDER_NONCE ),
+                    'confirm_delete'             => __( 'Move this field group to Trash?', 'jscfr' ),
+                    'confirm_delete_permanently' => __( 'Delete this field group permanently? This cannot be undone.', 'jscfr' ),
                 ) );
                 return;
             }
@@ -847,9 +884,10 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
             if ( 'edit' !== $action ) {
                 wp_enqueue_script( 'jscfr-builder-list-js', JSCFR_PLUGIN_URL . 'assets/js/jscfr-builder-list.js', array( 'jquery' ), JSCFR_VERSION, true );
                 wp_localize_script( 'jscfr-builder-list-js', 'jscfr_list', array(
-                    'ajax_url'       => admin_url( 'admin-ajax.php' ),
-                    'nonce'          => wp_create_nonce( JSCFR_BUILDER_NONCE ),
-                    'confirm_delete' => __( 'Delete this field group? This cannot be undone.', 'jscfr' ),
+                    'ajax_url'                   => admin_url( 'admin-ajax.php' ),
+                    'nonce'                      => wp_create_nonce( JSCFR_BUILDER_NONCE ),
+                    'confirm_delete'             => __( 'Move this field group to Trash?', 'jscfr' ),
+                    'confirm_delete_permanently' => __( 'Delete this field group permanently? This cannot be undone.', 'jscfr' ),
                 ) );
                 return;
             }
@@ -1090,6 +1128,24 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
             $fg_id = isset( $_POST['fg_id'] ) ? sanitize_key( $_POST['fg_id'] ) : '';
             if ( ! $fg_id ) wp_send_json_error( 'No ID' );
             JSCFR_Plugin::delete_field_group( $fg_id );
+            wp_send_json_success();
+        }
+
+        public function ajax_trash_field_group() {
+            check_ajax_referer( JSCFR_BUILDER_NONCE, 'nonce' );
+            if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
+            $fg_id = isset( $_POST['fg_id'] ) ? sanitize_key( $_POST['fg_id'] ) : '';
+            if ( ! $fg_id ) wp_send_json_error( 'No ID' );
+            if ( ! JSCFR_Plugin::trash_field_group( $fg_id ) ) wp_send_json_error( 'Not found' );
+            wp_send_json_success();
+        }
+
+        public function ajax_restore_field_group() {
+            check_ajax_referer( JSCFR_BUILDER_NONCE, 'nonce' );
+            if ( ! current_user_can( 'manage_options' ) ) wp_send_json_error( 'Unauthorized' );
+            $fg_id = isset( $_POST['fg_id'] ) ? sanitize_key( $_POST['fg_id'] ) : '';
+            if ( ! $fg_id ) wp_send_json_error( 'No ID' );
+            if ( ! JSCFR_Plugin::restore_field_group( $fg_id ) ) wp_send_json_error( 'Not found' );
             wp_send_json_success();
         }
 
