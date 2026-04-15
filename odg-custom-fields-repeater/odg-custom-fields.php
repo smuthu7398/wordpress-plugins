@@ -81,6 +81,7 @@ if ( ! class_exists( 'JSCFR_Plugin' ) ) {
         private function __construct() {
             add_action( 'admin_init', array( $this, 'maybe_migrate' ) );
             add_action( 'jscfr_v5_migrate_batch', array( __CLASS__, 'migrate_v5_batch' ) );
+            add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'add_plugin_action_links' ) );
             JSCFR_Builder::get_instance();
             JSCFR_Metabox::get_instance();
             JSCFR_REST::get_instance();
@@ -96,6 +97,12 @@ if ( ! class_exists( 'JSCFR_Plugin' ) ) {
             JSCFR_JSON_Sync::get_instance();
             JSCFR_Relationships::get_instance();
             JSCFR_Custom_Table::get_instance();
+        }
+
+        public function add_plugin_action_links( $links ) {
+            $settings = '<a href="' . esc_url( admin_url( 'admin.php?page=jscfr-builder' ) ) . '">' . esc_html__( 'Settings', 'jscfr' ) . '</a>';
+            array_unshift( $links, $settings );
+            return $links;
         }
 
         /* ---------------------------------------------------------- */
