@@ -232,10 +232,13 @@ if ( ! class_exists( 'JSCFR_Options_Page' ) ) {
                         <p class="jscfr-empty"><?php esc_html_e( 'No field groups are assigned to this options page. Edit a field group and add a location rule for this options page.', 'jscfr' ); ?></p>
                     <?php else : ?>
                         <?php foreach ( $field_groups as $fg ) :
+                            if ( JSCFR_Metabox::is_fg_hidden( $fg ) ) continue;
                             $fg_data = isset( $saved[ $fg['id'] ] ) ? $saved[ $fg['id'] ] : array();
                             $tabs = isset( $fg['tabs'] ) ? $fg['tabs'] : array();
+                            $wrap_classes = JSCFR_Metabox::build_wrap_classes( $fg );
+                            $wrap_attrs   = JSCFR_Metabox::build_wrap_data_attrs( $fg );
                         ?>
-                            <div class="jscfr-meta-wrap" data-fg="<?php echo esc_attr( $fg['id'] ); ?>">
+                            <div class="jscfr-meta-wrap <?php echo esc_attr( $wrap_classes ); ?>" data-fg="<?php echo esc_attr( $fg['id'] ); ?>"<?php echo $wrap_attrs; ?>>
                                 <h2><?php echo esc_html( $fg['title'] ); ?></h2>
 
                                 <?php if ( ! empty( $fg['settings']['description'] ) ) : ?>
@@ -506,6 +509,8 @@ if ( ! class_exists( 'JSCFR_Options_Page' ) ) {
             foreach ( $flat as $name => $value ) {
                 JSCFR_Plugin::set_field_value( $name, $value, 'options', 'options' );
             }
+
+            do_action( 'jscfr_options_saved', $slug, $existing );
 
             wp_send_json_success();
         }

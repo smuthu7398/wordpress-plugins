@@ -59,9 +59,17 @@ if ( ! function_exists( 'jscfr_uninstall_cleanup_site' ) ) {
         $wpdb->query( "DELETE FROM {$wpdb->usermeta}    WHERE meta_key LIKE '\\_jscfr\\_%'" );
         $wpdb->query( "DELETE FROM {$wpdb->commentmeta} WHERE meta_key LIKE '\\_jscfr\\_%'" );
 
-        // 4. Custom table
-        $table = $wpdb->prefix . 'jscfr_relationships';
-        $wpdb->query( "DROP TABLE IF EXISTS {$table}" );
+        // 4. Custom tables — relationships + any write-through tables
+        $rel_table = $wpdb->prefix . 'jscfr_relationships';
+        $wpdb->query( "DROP TABLE IF EXISTS {$rel_table}" );
+
+        $ct_prefix = $wpdb->esc_like( $wpdb->prefix . 'jscfr_ct_' ) . '%';
+        $ct_tables = $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $ct_prefix ) );
+        if ( is_array( $ct_tables ) ) {
+            foreach ( $ct_tables as $ct ) {
+                $wpdb->query( "DROP TABLE IF EXISTS `{$ct}`" );
+            }
+        }
 
         // 5. Cron events (clear all jscfr_* hooks, in case names change)
         $crons = _get_cron_array();

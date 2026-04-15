@@ -54,6 +54,7 @@ require_once JSCFR_PLUGIN_DIR . 'includes/class-jscfr-cpt.php';
 require_once JSCFR_PLUGIN_DIR . 'includes/class-jscfr-theme-code.php';
 require_once JSCFR_PLUGIN_DIR . 'includes/class-jscfr-json-sync.php';
 require_once JSCFR_PLUGIN_DIR . 'includes/class-jscfr-relationships.php';
+require_once JSCFR_PLUGIN_DIR . 'includes/class-jscfr-custom-table.php';
 
 /* ------------------------------------------------------------------ */
 /*  Main plugin class                                                  */
@@ -94,6 +95,7 @@ if ( ! class_exists( 'JSCFR_Plugin' ) ) {
             JSCFR_Theme_Code::get_instance();
             JSCFR_JSON_Sync::get_instance();
             JSCFR_Relationships::get_instance();
+            JSCFR_Custom_Table::get_instance();
         }
 
         /* ---------------------------------------------------------- */

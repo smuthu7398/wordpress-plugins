@@ -190,13 +190,172 @@
 
 
         /* Tab switching */
+        function jscfrActivateTab($wrap, tabId) {
+            if (!tabId) return false;
+            var $btn = $wrap.find('.jscfr-tab-nav > .jscfr-tab-btn[data-tab="' + tabId + '"]');
+            if (!$btn.length) return false;
+            $btn.siblings().removeClass('jscfr-tab-active');
+            $btn.addClass('jscfr-tab-active');
+            $wrap.find('> .jscfr-tabs-wrap > .jscfr-tabs-panels > .jscfr-tab-content, .jscfr-tab-content').filter(function () {
+                return $(this).closest('.jscfr-meta-wrap').is($wrap);
+            }).hide();
+            $wrap.find('#jscfr-tab-' + $wrap.data('fg') + '-' + tabId).show();
+            return true;
+        }
+
+        function jscfrTabStorageKey($wrap) {
+            var fg = $wrap.data('fg');
+            return fg ? 'jscfr_tab_' + fg : '';
+        }
+
         $(document).on('click.jscfr', '.jscfr-tab-btn', function () {
             var tabId = $(this).data('tab');
             var $wrap = $(this).closest('.jscfr-meta-wrap');
-            $(this).siblings().removeClass('jscfr-tab-active');
-            $(this).addClass('jscfr-tab-active');
-            $wrap.find('.jscfr-tab-content').hide();
-            $wrap.find('#jscfr-tab-' + $wrap.data('fg') + '-' + tabId).show();
+            jscfrActivateTab($wrap, tabId);
+            if ($wrap.data('jscfr-tab-remember')) {
+                try {
+                    var key = jscfrTabStorageKey($wrap);
+                    if (key && window.localStorage) localStorage.setItem(key, tabId);
+                } catch (e) {}
+            }
+        });
+
+        /* Restore remembered tab / apply default tab index on init */
+        $('.jscfr-meta-wrap').each(function () {
+            var $wrap = $(this);
+            var restored = false;
+            if ($wrap.data('jscfr-tab-remember')) {
+                try {
+                    var key = jscfrTabStorageKey($wrap);
+                    var saved = key && window.localStorage ? localStorage.getItem(key) : null;
+                    if (saved) restored = jscfrActivateTab($wrap, saved);
+                } catch (e) {}
+            }
+            if (!restored) {
+                var defIdx = parseInt($wrap.data('jscfr-tab-default'), 10);
+                if (defIdx > 0) {
+                    var $btns = $wrap.find('> .jscfr-tabs-wrap > .jscfr-tab-nav > .jscfr-tab-btn');
+                    if (!$btns.length) $btns = $wrap.find('.jscfr-tab-nav > .jscfr-tab-btn').filter(function () {
+                        return $(this).closest('.jscfr-meta-wrap').is($wrap);
+                    });
+                    var $target = $btns.eq(defIdx - 1);
+                    if ($target.length) jscfrActivateTab($wrap, $target.data('tab'));
+                }
+            }
+        });
+
+        /* ============================================================ */
+        /*  Autosave drafts to localStorage (autosave setting)          */
+        /* ============================================================ */
+        function jscfrAutosaveKey($wrap) {
+            var fg = $wrap.data('fg');
+            if (!fg) return '';
+            var ctx = '';
+            var params = new URLSearchParams(window.location.search);
+            ctx = params.get('post') || params.get('tag_ID') || params.get('user_id') || params.get('c') || params.get('page') || 'global';
+            return 'jscfr_draft_' + fg + '_' + ctx;
+        }
+
+        function jscfrCollectDraft($wrap) {
+            var data = {};
+            $wrap.find(':input[name^="jscfr_data"]').not('[disabled]').each(function () {
+                var $el = $(this);
+                var name = $el.attr('name');
+                if (!name || name.indexOf('__IDX__') !== -1) return;
+                if ($el.is(':checkbox') || $el.is(':radio')) {
+                    if (!$el.is(':checked')) return;
+                }
+                data[name] = $el.is(':checkbox,:radio') ? $el.val() : $el.val();
+            });
+            return data;
+        }
+
+        function jscfrSaveDraft($wrap) {
+            try {
+                var key = jscfrAutosaveKey($wrap);
+                if (!key || !window.localStorage) return;
+                var payload = { t: Date.now(), d: jscfrCollectDraft($wrap) };
+                localStorage.setItem(key, JSON.stringify(payload));
+                var $status = $wrap.find('> .jscfr-autosave-status');
+                if (!$status.length) {
+                    $status = $('<span class="jscfr-autosave-status"></span>').prependTo($wrap);
+                }
+                var d = new Date(payload.t);
+                var hh = String(d.getHours()).padStart(2, '0');
+                var mm = String(d.getMinutes()).padStart(2, '0');
+                var ss = String(d.getSeconds()).padStart(2, '0');
+                $status.text('Draft saved ' + hh + ':' + mm + ':' + ss);
+            } catch (e) {}
+        }
+
+        function jscfrClearDraft($wrap) {
+            try {
+                var key = jscfrAutosaveKey($wrap);
+                if (key && window.localStorage) localStorage.removeItem(key);
+            } catch (e) {}
+        }
+
+        var autosaveTimer = null;
+        $(document).on('input.jscfr change.jscfr', '.jscfr-meta-wrap.jscfr-autosave-on :input', function () {
+            var $wrap = $(this).closest('.jscfr-meta-wrap.jscfr-autosave-on');
+            if (!$wrap.length) return;
+            if (autosaveTimer) clearTimeout(autosaveTimer);
+            autosaveTimer = setTimeout(function () {
+                jscfrSaveDraft($wrap);
+            }, 1500);
+        });
+
+        $('.jscfr-meta-wrap.jscfr-autosave-on').each(function () {
+            var $wrap = $(this);
+            try {
+                var key = jscfrAutosaveKey($wrap);
+                if (!key || !window.localStorage) return;
+                var raw = localStorage.getItem(key);
+                if (!raw) return;
+                var saved = JSON.parse(raw);
+                if (!saved || !saved.d || !saved.t) return;
+                // Show restore banner (user opt-in; never silently overwrite)
+                var $banner = $(
+                    '<div class="jscfr-autosave-banner notice notice-info" style="margin:8px 0;padding:8px 12px;">' +
+                    '<span class="dashicons dashicons-backup" style="vertical-align:middle;"></span> ' +
+                    'An unsaved draft from ' + new Date(saved.t).toLocaleString() + ' is available. ' +
+                    '<button type="button" class="button button-small jscfr-autosave-restore" style="margin:0 4px;">Restore</button>' +
+                    '<button type="button" class="button-link jscfr-autosave-discard">Discard</button>' +
+                    '</div>'
+                );
+                $banner.data('draft', saved.d);
+                $wrap.prepend($banner);
+            } catch (e) {}
+        });
+
+        $(document).on('click.jscfr', '.jscfr-autosave-restore', function () {
+            var $banner = $(this).closest('.jscfr-autosave-banner');
+            var $wrap   = $banner.closest('.jscfr-meta-wrap');
+            var d       = $banner.data('draft');
+            if (!d) return;
+            $.each(d, function (name, val) {
+                var $el = $wrap.find(':input[name="' + name + '"]');
+                if ($el.is(':checkbox,:radio')) {
+                    $el.filter('[value="' + val + '"]').prop('checked', true);
+                } else {
+                    $el.val(val).trigger('change');
+                }
+            });
+            $banner.remove();
+        });
+
+        $(document).on('click.jscfr', '.jscfr-autosave-discard', function () {
+            var $banner = $(this).closest('.jscfr-autosave-banner');
+            var $wrap   = $banner.closest('.jscfr-meta-wrap');
+            jscfrClearDraft($wrap);
+            $banner.remove();
+        });
+
+        // Clear drafts on successful form submit
+        $(document).on('submit.jscfr', 'form', function () {
+            $(this).find('.jscfr-meta-wrap.jscfr-autosave-on').each(function () {
+                jscfrClearDraft($(this));
+            });
         });
 
         /* Add Clone */

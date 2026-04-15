@@ -192,21 +192,13 @@ if ( ! class_exists( 'JSCFR_Term_Meta' ) ) {
 
             foreach ( $fgs as $fg ) {
                 if ( empty( $fg['tabs'] ) ) continue;
+                if ( JSCFR_Metabox::is_fg_hidden( $fg ) ) continue;
 
-                $style_class = '';
-                if ( isset( $fg['settings']['style'] ) && 'seamless' === $fg['settings']['style'] ) {
-                    $style_class .= ' jscfr-seamless';
-                }
-                if ( isset( $fg['settings']['label_placement'] ) && 'left' === $fg['settings']['label_placement'] ) {
-                    $style_class .= ' jscfr-labels-left';
-                }
-                $tab_placement = isset( $fg['settings']['tab_placement'] ) ? $fg['settings']['tab_placement'] : 'top';
-                if ( 'left' === $tab_placement ) {
-                    $style_class .= ' jscfr-tabs-left';
-                }
+                $wrap_classes = JSCFR_Metabox::build_wrap_classes( $fg );
+                $wrap_attrs   = JSCFR_Metabox::build_wrap_data_attrs( $fg );
 
                 echo '<h3 class="jscfr-term-fg-title">' . esc_html( $fg['title'] ) . '</h3>';
-                echo '<div class="jscfr-meta-wrap' . esc_attr( $style_class ) . '" data-fg="' . esc_attr( $fg['id'] ) . '">';
+                echo '<div class="jscfr-meta-wrap ' . esc_attr( $wrap_classes ) . '" data-fg="' . esc_attr( $fg['id'] ) . '"' . $wrap_attrs . '>';
 
                 if ( ! empty( $fg['settings']['description'] ) ) {
                     echo '<p class="jscfr-fg-desc">' . esc_html( $fg['settings']['description'] ) . '</p>';

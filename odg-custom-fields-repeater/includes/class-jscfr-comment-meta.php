@@ -131,6 +131,7 @@ if ( ! class_exists( 'JSCFR_Comment_Meta' ) ) {
             if ( empty( $fgs ) ) return;
 
             foreach ( $fgs as $fg ) {
+                if ( JSCFR_Metabox::is_fg_hidden( $fg ) ) continue;
                 add_meta_box(
                     'jscfr_comment_' . $fg['id'],
                     ! empty( $fg['title'] ) ? esc_html( $fg['title'] ) : __( 'Custom Fields', 'jscfr' ),
@@ -154,12 +155,10 @@ if ( ! class_exists( 'JSCFR_Comment_Meta' ) ) {
 
             if ( empty( $fg['tabs'] ) ) return;
 
-            $style_class = '';
-            if ( isset( $fg['settings']['style'] ) && 'seamless' === $fg['settings']['style'] ) {
-                $style_class .= ' jscfr-seamless';
-            }
+            $wrap_classes = JSCFR_Metabox::build_wrap_classes( $fg );
+            $wrap_attrs   = JSCFR_Metabox::build_wrap_data_attrs( $fg );
 
-            echo '<div class="jscfr-meta-wrap' . esc_attr( $style_class ) . '" data-fg="' . esc_attr( $fg['id'] ) . '">';
+            echo '<div class="jscfr-meta-wrap ' . esc_attr( $wrap_classes ) . '" data-fg="' . esc_attr( $fg['id'] ) . '"' . $wrap_attrs . '>';
 
             if ( ! empty( $fg['settings']['description'] ) ) {
                 echo '<p class="jscfr-fg-desc">' . esc_html( $fg['settings']['description'] ) . '</p>';

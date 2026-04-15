@@ -37,7 +37,12 @@ if ( ! class_exists( 'JSCFR_Metabox' ) ) {
                 $field_groups = JSCFR_Plugin::get_field_groups_for_post_type( $post_type );
             }
 
+            $post_id = ( $post && is_object( $post ) && isset( $post->ID ) ) ? (int) $post->ID : 0;
+
             foreach ( $field_groups as $fg ) {
+                if ( self::is_fg_hidden( $fg ) ) continue;
+                if ( $post_id && ! self::post_passes_include_exclude( $fg, $post_id ) ) continue;
+
                 $position = isset( $fg['settings']['position'] ) ? $fg['settings']['position'] : 'normal';
                 if ( 'acf_after_title' === $position ) {
                     $position = 'normal';
@@ -53,6 +58,97 @@ if ( ! class_exists( 'JSCFR_Metabox' ) ) {
                     array( 'fg' => $fg )
                 );
             }
+        }
+
+        /* ---------------------------------------------------------- */
+        /*  Shared FG settings helpers                                 */
+        /* ---------------------------------------------------------- */
+
+        /**
+         * Build the class attribute for the .jscfr-meta-wrap wrapper from
+         * field-group settings. Centralized so every renderer (post, term,
+         * user, comment, options, frontend) applies the same visual options.
+         */
+        public static function build_wrap_classes( $fg ) {
+            $s = isset( $fg['settings'] ) ? $fg['settings'] : array();
+            $classes = array();
+            if ( isset( $s['style'] ) && 'seamless' === $s['style'] ) {
+                $classes[] = 'jscfr-seamless';
+            }
+            if ( isset( $s['label_placement'] ) && 'left' === $s['label_placement'] ) {
+                $classes[] = 'jscfr-labels-left';
+            }
+            if ( isset( $s['tab_placement'] ) && 'left' === $s['tab_placement'] ) {
+                $classes[] = 'jscfr-tabs-left';
+            }
+            if ( ! empty( $s['tab_style'] ) ) {
+                $tab_style = sanitize_html_class( $s['tab_style'] );
+                if ( $tab_style ) $classes[] = 'jscfr-tab-style-' . $tab_style;
+            }
+            if ( ! empty( $s['collapsed'] ) ) {
+                $classes[] = 'jscfr-collapsed-default';
+            }
+            if ( ! empty( $s['autosave'] ) ) {
+                $classes[] = 'jscfr-autosave-on';
+            }
+            if ( ! empty( $s['custom_class'] ) ) {
+                $parts = preg_split( '/\s+/', trim( $s['custom_class'] ) );
+                foreach ( (array) $parts as $part ) {
+                    $safe = sanitize_html_class( $part );
+                    if ( $safe ) $classes[] = $safe;
+                }
+            }
+            return implode( ' ', $classes );
+        }
+
+        /**
+         * Build inline data attributes for the wrapper that JS reads
+         * (tab remember/default key, etc.).
+         */
+        public static function build_wrap_data_attrs( $fg ) {
+            $s = isset( $fg['settings'] ) ? $fg['settings'] : array();
+            $attrs = '';
+            if ( ! empty( $s['tab_remember'] ) ) {
+                $attrs .= ' data-jscfr-tab-remember="1"';
+            }
+            if ( isset( $s['tab_default'] ) && (int) $s['tab_default'] > 0 ) {
+                $attrs .= ' data-jscfr-tab-default="' . esc_attr( (int) $s['tab_default'] ) . '"';
+            }
+            if ( ! empty( $s['autosave'] ) ) {
+                $attrs .= ' data-jscfr-autosave="1"';
+            }
+            return $attrs;
+        }
+
+        /**
+         * Whether the field group should be suppressed from rendering
+         * entirely. Different from settings.active: hidden only affects
+         * rendering, not the underlying save path.
+         */
+        public static function is_fg_hidden( $fg ) {
+            $s = isset( $fg['settings'] ) ? $fg['settings'] : array();
+            return ! empty( $s['hidden'] );
+        }
+
+        /**
+         * Check a post ID against the FG's include/exclude filters.
+         * Returns true if the post should see the field group, false if
+         * filtered out. Post-context only.
+         */
+        public static function post_passes_include_exclude( $fg, $post_id ) {
+            $s = isset( $fg['settings'] ) ? $fg['settings'] : array();
+            $include = isset( $s['include'] ) ? trim( (string) $s['include'] ) : '';
+            $exclude = isset( $s['exclude'] ) ? trim( (string) $s['exclude'] ) : '';
+            $post_id = (int) $post_id;
+            if ( '' !== $include ) {
+                $ids = array_filter( array_map( 'intval', preg_split( '/[\s,]+/', $include ) ) );
+                if ( $ids && ! in_array( $post_id, $ids, true ) ) return false;
+            }
+            if ( '' !== $exclude ) {
+                $ids = array_filter( array_map( 'intval', preg_split( '/[\s,]+/', $exclude ) ) );
+                if ( $ids && in_array( $post_id, $ids, true ) ) return false;
+            }
+            return true;
         }
 
         /* ---------------------------------------------------------- */
@@ -205,20 +301,10 @@ if ( ! class_exists( 'JSCFR_Metabox' ) ) {
             $fg_data = isset( $saved[ $fg['id'] ] ) ? $saved[ $fg['id'] ] : array();
             $tabs    = isset( $fg['tabs'] ) ? $fg['tabs'] : array();
 
-            $style_class = '';
-            if ( isset( $fg['settings']['style'] ) && 'seamless' === $fg['settings']['style'] ) {
-                $style_class .= ' jscfr-seamless';
-            }
-            if ( isset( $fg['settings']['label_placement'] ) && 'left' === $fg['settings']['label_placement'] ) {
-                $style_class .= ' jscfr-labels-left';
-            }
+            $wrap_classes = self::build_wrap_classes( $fg );
+            $wrap_attrs   = self::build_wrap_data_attrs( $fg );
 
-            $tab_placement = isset( $fg['settings']['tab_placement'] ) ? $fg['settings']['tab_placement'] : 'top';
-            if ( 'left' === $tab_placement ) {
-                $style_class .= ' jscfr-tabs-left';
-            }
-
-            echo '<div class="jscfr-meta-wrap' . esc_attr( $style_class ) . '" data-fg="' . esc_attr( $fg['id'] ) . '">';
+            echo '<div class="jscfr-meta-wrap ' . esc_attr( $wrap_classes ) . '" data-fg="' . esc_attr( $fg['id'] ) . '"' . $wrap_attrs . '>';
 
             if ( ! empty( $fg['settings']['description'] ) ) {
                 echo '<p class="jscfr-fg-desc">' . esc_html( $fg['settings']['description'] ) . '</p>';
