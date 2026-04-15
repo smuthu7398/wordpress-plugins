@@ -173,7 +173,7 @@
 }
 
 /* -- Column widths -- */
-.jscfr-fg-table .jscfr-col-status { width: 70px; }
+.jscfr-fg-table .jscfr-col-status { width: 90px; }
 .jscfr-fg-table .jscfr-col-title { width: auto; }
 .jscfr-fg-table .jscfr-col-showfor { width: 12%; }
 .jscfr-fg-table .jscfr-col-location { width: 10%; }
@@ -295,6 +295,7 @@
     text-transform: uppercase;
     letter-spacing: 0.03em;
     padding: 12px 14px;
+    white-space: nowrap;
 }
 .jscfr-fg-table.wp-list-table tfoot th,
 .jscfr-fg-table.wp-list-table tfoot td {
