@@ -1,0 +1,59 @@
+/**
+ * JSCFR CPT & Taxonomy admin styles
+ * @package JSCFR
+ * @since   5.0.0
+ */
+.jscfr-cpt-wrap .wp-list-table { margin-top: 16px; }
+.jscfr-cpt-wrap .jscfr-no-items td { color: #888; font-style: italic; }
+
+/* Modal */
+.jscfr-modal {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,.5);
+    z-index: 100050;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 60px;
+    overflow-y: auto;
+}
+
+.jscfr-modal-content {
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.25);
+    padding: 20px 28px 24px;
+    max-width: 720px;
+    width: 100%;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    position: relative;
+}
+
+.jscfr-modal-content h2 {
+    margin-top: 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #ddd;
+}
+
+.jscfr-modal-content .form-table th {
+    width: 160px;
+    padding: 10px 10px 10px 0;
+    vertical-align: top;
+}
+
+.jscfr-modal-content .form-table td {
+    padding: 10px 0;
+}
+
+.jscfr-modal-content .form-table label {
+    display: inline-block;
+    margin-bottom: 2px;
+}
+
+.jscfr-modal-content .submit {
+    border-top: 1px solid #ddd;
+    padding-top: 16px;
+    margin-top: 8px;
+}

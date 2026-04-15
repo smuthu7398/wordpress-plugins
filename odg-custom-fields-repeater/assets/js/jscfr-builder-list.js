@@ -1,0 +1,195 @@
+/**
+ * JSCFR Builder — List page JS (delete, duplicate, toggle, bulk actions, import/export)
+ */
+(function ($) {
+    'use strict';
+
+    var L = jscfr_list;
+
+    $(function () {
+
+        /* Select all checkboxes (top + bottom) */
+        $(document).on('change.jscfr', '#jscfr-cb-all, #jscfr-cb-all-bottom', function () {
+            var checked = $(this).prop('checked');
+            $('.jscfr-export-cb').prop('checked', checked);
+            $('#jscfr-cb-all, #jscfr-cb-all-bottom').prop('checked', checked);
+        });
+        $(document).on('change.jscfr', '.jscfr-export-cb', function () {
+            var total = $('.jscfr-export-cb').length;
+            var checked = $('.jscfr-export-cb:checked').length;
+            $('#jscfr-cb-all, #jscfr-cb-all-bottom').prop('checked', total === checked);
+        });
+
+        /* Delete (Trash) */
+        $(document).on('click.jscfr', '.jscfr-action-delete', function (e) {
+            e.preventDefault();
+            if (!confirm(L.confirm_delete)) return;
+            var $tr = $(this).closest('tr');
+            var id = $tr.data('fg-id') || $(this).data('id');
+            $.post(L.ajax_url, { action: 'jscfr_delete_field_group', nonce: L.nonce, fg_id: id })
+                .done(function (res) {
+                    if (res.success) {
+                        $tr.fadeOut(300, function () { $(this).remove(); });
+                    } else {
+                        alert('Delete failed: ' + (res.data || 'Unknown error'));
+                    }
+                })
+                .fail(function (xhr) {
+                    alert('Delete request failed: ' + xhr.status + ' ' + xhr.statusText);
+                });
+        });
+
+        /* Duplicate */
+        $(document).on('click.jscfr', '.jscfr-action-duplicate', function (e) {
+            e.preventDefault();
+            var id = $(this).data('id');
+            $.post(L.ajax_url, { action: 'jscfr_duplicate_field_group', nonce: L.nonce, fg_id: id }, function (res) {
+                if (res.success && res.data.redirect) {
+                    window.location.href = res.data.redirect;
+                }
+            });
+        });
+
+        /* Toggle active — via toggle switch */
+        $(document).on('change.jscfr', '.jscfr-action-toggle-switch', function () {
+            var $cb = $(this);
+            var $tr = $cb.closest('tr');
+            var id = $cb.data('id');
+            $.post(L.ajax_url, { action: 'jscfr_toggle_field_group', nonce: L.nonce, fg_id: id }, function (res) {
+                if (res.success) {
+                    if (res.data.active) {
+                        $tr.removeClass('jscfr-row-inactive');
+                        $tr.find('.jscfr-col-date').text('Published');
+                    } else {
+                        $tr.addClass('jscfr-row-inactive');
+                        $tr.find('.jscfr-col-date').text('Draft');
+                    }
+                }
+            });
+        });
+
+        /* Legacy toggle link (fallback) */
+        $(document).on('click.jscfr', '.jscfr-action-toggle', function (e) {
+            e.preventDefault();
+            var $a = $(this);
+            var $tr = $a.closest('tr');
+            var id = $a.data('id');
+            $.post(L.ajax_url, { action: 'jscfr_toggle_field_group', nonce: L.nonce, fg_id: id }, function (res) {
+                if (res.success) {
+                    if (res.data.active) {
+                        $tr.removeClass('jscfr-row-inactive');
+                        $a.text('Deactivate');
+                    } else {
+                        $tr.addClass('jscfr-row-inactive');
+                        $a.text('Activate');
+                    }
+                }
+            });
+        });
+
+        /* Bulk actions */
+        $(document).on('click.jscfr', '.jscfr-bulk-apply', function () {
+            var selId = $(this).data('select');
+            var action = $(selId).val();
+            if (action === '-1') return;
+
+            var ids = [];
+            $('.jscfr-export-cb:checked').each(function () {
+                ids.push($(this).val());
+            });
+            if (!ids.length) { alert('Select at least one field group.'); return; }
+
+            if (action === 'delete') {
+                if (!confirm(L.confirm_delete)) return;
+                var deleted = 0;
+                $.each(ids, function (_, id) {
+                    $.post(L.ajax_url, { action: 'jscfr_delete_field_group', nonce: L.nonce, fg_id: id }, function (res) {
+                        if (res.success) {
+                            $('tr[data-fg-id="' + id + '"]').fadeOut(300, function () { $(this).remove(); });
+                        }
+                        deleted++;
+                        if (deleted >= ids.length) {
+                            setTimeout(function () { window.location.reload(); }, 500);
+                        }
+                    });
+                });
+            } else if (action === 'export') {
+                $.post(L.ajax_url, {
+                    action: 'jscfr_export_field_groups',
+                    nonce: L.nonce,
+                    ids: ids
+                }, function (res) {
+                    if (res.success) {
+                        var blob = new Blob([res.data.json], { type: 'application/json' });
+                        var url = URL.createObjectURL(blob);
+                        var a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'jscfr-field-groups.json';
+                        a.click();
+                        URL.revokeObjectURL(url);
+                    }
+                });
+            }
+        });
+
+        /* Export (standalone button on import/export page) */
+        $(document).on('click.jscfr', '#jscfr-export-btn', function () {
+            var ids = [];
+            $('.jscfr-export-cb:checked').each(function () {
+                ids.push($(this).val());
+            });
+            if (!ids.length) { alert('Select at least one field group.'); return; }
+
+            $.post(L.ajax_url, {
+                action: 'jscfr_export_field_groups',
+                nonce: L.nonce,
+                ids: ids
+            }, function (res) {
+                if (res.success) {
+                    var $ta = $('#jscfr-export-json');
+                    $ta.val(res.data.json).show();
+                    $ta[0].select();
+                    var blob = new Blob([res.data.json], { type: 'application/json' });
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'jscfr-field-groups.json';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }
+            });
+        });
+
+        /* Import: file upload */
+        $(document).on('change.jscfr', '#jscfr-import-file', function () {
+            var file = this.files[0];
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                $('#jscfr-import-json').val(e.target.result);
+            };
+            reader.readAsText(file);
+        });
+
+        /* Import */
+        $(document).on('click.jscfr', '#jscfr-import-btn', function () {
+            var json = $('#jscfr-import-json').val().trim();
+            if (!json) { alert('Paste JSON or upload a file first.'); return; }
+
+            $.post(L.ajax_url, {
+                action: 'jscfr_import_field_groups',
+                nonce: L.nonce,
+                json: json
+            }, function (res) {
+                var $st = $('#jscfr-import-status');
+                if (res.success) {
+                    $st.text('Imported ' + res.data.count + ' field group(s). Refreshing...').css('color', 'green');
+                    setTimeout(function () { window.location.reload(); }, 1500);
+                } else {
+                    $st.text('Error: ' + (res.data || 'Invalid JSON')).css('color', 'red');
+                }
+            });
+        });
+    });
+
+})(jQuery);

@@ -1,0 +1,514 @@
+/**
+ * JSCFR Frontend Form Styles
+ *
+ * @package JSCFR
+ * @since   5.0.0
+ */
+
+/* ================================================================ */
+/*  Form wrapper                                                     */
+/* ================================================================ */
+.jscfr-frontend-form-wrap {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.jscfr-frontend-form {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #333;
+}
+
+/* ================================================================ */
+/*  Tabs                                                             */
+/* ================================================================ */
+.jscfr-frontend-tab-nav {
+    list-style: none;
+    margin: 0 0 20px;
+    padding: 0;
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid #ddd;
+}
+
+.jscfr-frontend-tab-nav li {
+    margin: 0;
+}
+
+.jscfr-frontend-tab-nav li a {
+    display: block;
+    padding: 8px 16px;
+    text-decoration: none;
+    color: #555;
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: 4px 4px 0 0;
+    margin-bottom: -2px;
+    transition: color .2s, background .2s;
+}
+
+.jscfr-frontend-tab-nav li a:hover {
+    color: #0073aa;
+    background: #f7f7f7;
+}
+
+.jscfr-frontend-tab-nav li.jscfr-active a {
+    color: #0073aa;
+    background: #fff;
+    border-color: #ddd;
+    border-bottom-color: #fff;
+    font-weight: 600;
+}
+
+.jscfr-frontend-tab-panel {
+    padding: 0;
+}
+
+/* ================================================================ */
+/*  Groups                                                           */
+/* ================================================================ */
+.jscfr-frontend-group {
+    margin-bottom: 24px;
+}
+
+.jscfr-frontend-group-title {
+    margin: 0 0 12px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #23282d;
+}
+
+.jscfr-frontend-row {
+    position: relative;
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.jscfr-frontend-row:last-child {
+    border-bottom: none;
+}
+
+.jscfr-frontend-clone-row {
+    padding-right: 30px;
+}
+
+.jscfr-frontend-remove-row {
+    position: absolute;
+    top: 12px;
+    right: 0;
+    background: none;
+    border: none;
+    color: #a00;
+    font-size: 18px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 2px 6px;
+}
+
+.jscfr-frontend-remove-row:hover {
+    color: #dc3232;
+}
+
+.jscfr-frontend-add-row {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 6px 14px;
+    background: #f7f7f7;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    color: #555;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background .2s;
+}
+
+.jscfr-frontend-add-row:hover {
+    background: #eee;
+    color: #333;
+}
+
+/* ================================================================ */
+/*  Fields                                                           */
+/* ================================================================ */
+.jscfr-frontend-fields {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 16px;
+}
+
+.jscfr-frontend-field {
+    grid-column: span 12;
+    margin-bottom: 4px;
+}
+
+.jscfr-frontend-field > label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 600;
+    font-size: 13px;
+    color: #23282d;
+}
+
+.jscfr-frontend-required {
+    color: #dc3232;
+}
+
+.jscfr-frontend-instructions {
+    margin: 0 0 4px;
+    font-size: 12px;
+    color: #888;
+    font-style: italic;
+}
+
+/* Inputs */
+.jscfr-frontend-input,
+.jscfr-frontend-textarea,
+.jscfr-frontend-select {
+    display: block;
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #333;
+    background: #fff;
+    box-sizing: border-box;
+    transition: border-color .2s;
+}
+
+.jscfr-frontend-input:focus,
+.jscfr-frontend-textarea:focus,
+.jscfr-frontend-select:focus {
+    border-color: #0073aa;
+    outline: none;
+    box-shadow: 0 0 0 1px #0073aa;
+}
+
+.jscfr-frontend-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.jscfr-frontend-color {
+    width: 60px;
+    padding: 2px;
+    height: 36px;
+}
+
+/* ================================================================ */
+/*  Checkboxes / Radios                                              */
+/* ================================================================ */
+.jscfr-frontend-checkboxes label,
+.jscfr-frontend-radios label,
+.jscfr-frontend-term-list label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.jscfr-frontend-checkboxes label input,
+.jscfr-frontend-radios label input,
+.jscfr-frontend-term-list label input {
+    margin-right: 6px;
+}
+
+/* ================================================================ */
+/*  Toggle / Switch                                                  */
+/* ================================================================ */
+.jscfr-frontend-toggle {
+    cursor: pointer;
+    font-weight: normal !important;
+}
+
+.jscfr-frontend-switch {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.jscfr-frontend-switch input {
+    display: none;
+}
+
+.jscfr-frontend-switch-label {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 24px;
+    background: #ccc;
+    border-radius: 12px;
+    transition: background .3s;
+}
+
+.jscfr-frontend-switch-label::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform .3s;
+}
+
+.jscfr-frontend-switch input:checked + .jscfr-frontend-switch-label {
+    background: #0073aa;
+}
+
+.jscfr-frontend-switch input:checked + .jscfr-frontend-switch-label::after {
+    transform: translateX(24px);
+}
+
+/* ================================================================ */
+/*  Image Select                                                     */
+/* ================================================================ */
+.jscfr-frontend-image-select {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.jscfr-frontend-imgsel-item {
+    cursor: pointer;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    padding: 4px;
+    text-align: center;
+    transition: border-color .2s;
+}
+
+.jscfr-frontend-imgsel-item input {
+    display: none;
+}
+
+.jscfr-frontend-imgsel-item img {
+    display: block;
+    max-width: 80px;
+    max-height: 60px;
+    margin: 0 auto 4px;
+}
+
+.jscfr-frontend-imgsel-item span {
+    display: block;
+    font-size: 12px;
+}
+
+.jscfr-frontend-imgsel-item input:checked + img,
+.jscfr-frontend-imgsel-item:has(input:checked) {
+    border-color: #0073aa;
+}
+
+/* ================================================================ */
+/*  Key-Value                                                        */
+/* ================================================================ */
+.jscfr-frontend-kv-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+    align-items: center;
+}
+
+.jscfr-frontend-kv-row .jscfr-frontend-input {
+    flex: 1;
+}
+
+.jscfr-frontend-kv-remove {
+    background: none;
+    border: none;
+    color: #a00;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px;
+    flex-shrink: 0;
+}
+
+.jscfr-frontend-kv-add {
+    display: inline-block;
+    margin-top: 4px;
+    padding: 4px 12px;
+    background: #f7f7f7;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    color: #555;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+/* ================================================================ */
+/*  Fieldset Text / Text List                                        */
+/* ================================================================ */
+.jscfr-frontend-fieldset-text {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.jscfr-frontend-fst-pair {
+    flex: 1;
+    min-width: 120px;
+}
+
+.jscfr-frontend-fst-pair label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+/* ================================================================ */
+/*  Background composite                                             */
+/* ================================================================ */
+.jscfr-frontend-background {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px 12px;
+    align-items: center;
+}
+
+.jscfr-frontend-background label {
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.jscfr-frontend-background .jscfr-frontend-input,
+.jscfr-frontend-background .jscfr-frontend-select {
+    width: 100%;
+}
+
+/* ================================================================ */
+/*  Display-only types                                               */
+/* ================================================================ */
+.jscfr-frontend-field--heading {
+    grid-column: span 12;
+}
+
+.jscfr-frontend-field--heading h1,
+.jscfr-frontend-field--heading h2,
+.jscfr-frontend-field--heading h3,
+.jscfr-frontend-field--heading h4,
+.jscfr-frontend-field--heading h5,
+.jscfr-frontend-field--heading h6 {
+    margin: 8px 0;
+}
+
+.jscfr-frontend-field--divider {
+    grid-column: span 12;
+}
+
+.jscfr-frontend-field--divider hr {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 8px 0;
+}
+
+.jscfr-frontend-field--custom-html {
+    grid-column: span 12;
+}
+
+/* ================================================================ */
+/*  Submit                                                           */
+/* ================================================================ */
+.jscfr-frontend-submit-wrap {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.jscfr-frontend-submit-btn {
+    display: inline-block;
+    padding: 10px 24px;
+    background: #0073aa;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .2s;
+}
+
+.jscfr-frontend-submit-btn:hover {
+    background: #005a87;
+}
+
+.jscfr-frontend-submit-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.jscfr-frontend-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #ccc;
+    border-top-color: #0073aa;
+    border-radius: 50%;
+    animation: jscfr-spin .8s linear infinite;
+}
+
+@keyframes jscfr-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ================================================================ */
+/*  Messages                                                         */
+/* ================================================================ */
+.jscfr-frontend-message {
+    margin-top: 12px;
+    padding: 10px 14px;
+    border-radius: 3px;
+    font-size: 14px;
+}
+
+.jscfr-frontend-success {
+    background: #ecf7ed;
+    border: 1px solid #46b450;
+    color: #2a6f2e;
+}
+
+.jscfr-frontend-error {
+    background: #fbeaea;
+    border: 1px solid #dc3232;
+    color: #8b1a1a;
+}
+
+/* ================================================================ */
+/*  Login required                                                   */
+/* ================================================================ */
+.jscfr-frontend-login-required {
+    padding: 16px;
+    background: #fff8e5;
+    border: 1px solid #ffb900;
+    border-radius: 4px;
+    color: #826200;
+}
+
+/* ================================================================ */
+/*  Responsive                                                       */
+/* ================================================================ */
+@media (max-width: 600px) {
+    .jscfr-frontend-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .jscfr-frontend-field {
+        grid-column: span 1 !important;
+    }
+
+    .jscfr-frontend-tab-nav {
+        flex-wrap: wrap;
+    }
+
+    .jscfr-frontend-fieldset-text {
+        flex-direction: column;
+    }
+
+    .jscfr-frontend-background {
+        grid-template-columns: 1fr;
+    }
+}
