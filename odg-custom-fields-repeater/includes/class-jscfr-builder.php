@@ -809,49 +809,98 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
                 wp_die( esc_html__( 'Unauthorized', 'jscfr' ) );
             }
             $config = JSCFR_Plugin::get_config();
+            $count  = count( $config );
             ?>
-            <div class="wrap jscfr-builder-wrap">
-                <h1><?php esc_html_e( 'Import / Export Field Groups', 'jscfr' ); ?></h1>
-                <hr class="wp-header-end">
+            <div class="wrap jscfr-builder-wrap jscfr-ie-wrap">
+                <div class="jscfr-ie-header">
+                    <h1 class="jscfr-ie-title"><?php esc_html_e( 'Import / Export', 'jscfr' ); ?></h1>
+                    <p class="jscfr-ie-subtitle"><?php esc_html_e( 'Move your field groups between sites as JSON.', 'jscfr' ); ?></p>
+                </div>
+                <hr class="wp-header-end" />
 
                 <div class="jscfr-ie-grid">
-                    <!-- Export -->
-                    <div class="jscfr-ie-box">
-                        <h2><?php esc_html_e( 'Export', 'jscfr' ); ?></h2>
-                        <p class="description"><?php esc_html_e( 'Select field groups to export as JSON.', 'jscfr' ); ?></p>
-                        <div class="jscfr-ie-checkboxes">
-                            <?php foreach ( $config as $fg ) : ?>
-                                <label>
-                                    <input type="checkbox" class="jscfr-export-cb" value="<?php echo esc_attr( $fg['id'] ); ?>" checked />
-                                    <?php echo esc_html( ! empty( $fg['title'] ) ? $fg['title'] : $fg['id'] ); ?>
-                                </label><br>
-                            <?php endforeach; ?>
+
+                    <!-- ===== Export card ===== -->
+                    <div class="jscfr-ie-card">
+                        <div class="jscfr-ie-card-head">
+                            <div class="jscfr-ie-icon jscfr-ie-icon--export">
+                                <span class="dashicons dashicons-download"></span>
+                            </div>
+                            <div>
+                                <h2 class="jscfr-ie-card-title"><?php esc_html_e( 'Export', 'jscfr' ); ?></h2>
+                                <p class="jscfr-ie-card-desc"><?php esc_html_e( 'Pick field groups to download as JSON.', 'jscfr' ); ?></p>
+                            </div>
                         </div>
-                        <p>
-                            <button type="button" class="button button-primary" id="jscfr-export-btn">
-                                <span class="dashicons dashicons-download" style="vertical-align:middle;margin-right:4px;"></span>
+
+                        <?php if ( $count > 0 ) : ?>
+                            <div class="jscfr-ie-toolbar">
+                                <label class="jscfr-ie-selectall">
+                                    <input type="checkbox" id="jscfr-ie-select-all" checked />
+                                    <span><?php esc_html_e( 'Select all', 'jscfr' ); ?></span>
+                                </label>
+                                <span class="jscfr-ie-pill"><span id="jscfr-ie-count"><?php echo intval( $count ); ?></span> / <?php echo intval( $count ); ?></span>
+                            </div>
+
+                            <div class="jscfr-ie-list">
+                                <?php foreach ( $config as $fg ) : ?>
+                                    <label class="jscfr-ie-row">
+                                        <input type="checkbox" class="jscfr-export-cb" value="<?php echo esc_attr( $fg['id'] ); ?>" checked />
+                                        <span class="jscfr-ie-row-title"><?php echo esc_html( ! empty( $fg['title'] ) ? $fg['title'] : $fg['id'] ); ?></span>
+                                        <code class="jscfr-ie-row-id"><?php echo esc_html( $fg['id'] ); ?></code>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
+                        <?php else : ?>
+                            <div class="jscfr-ie-empty">
+                                <span class="dashicons dashicons-editor-table"></span>
+                                <p><?php esc_html_e( 'No field groups to export yet.', 'jscfr' ); ?></p>
+                            </div>
+                        <?php endif; ?>
+
+                        <div class="jscfr-ie-actions">
+                            <button type="button" class="button button-primary jscfr-ie-btn" id="jscfr-export-btn" <?php disabled( 0 === $count ); ?>>
+                                <span class="dashicons dashicons-download"></span>
                                 <?php esc_html_e( 'Export Selected', 'jscfr' ); ?>
                             </button>
-                        </p>
-                        <textarea id="jscfr-export-json" class="large-text code" rows="10" readonly style="display:none;"></textarea>
+                        </div>
+
+                        <textarea id="jscfr-export-json" class="jscfr-ie-textarea" rows="8" readonly style="display:none;"></textarea>
                     </div>
 
-                    <!-- Import -->
-                    <div class="jscfr-ie-box">
-                        <h2><?php esc_html_e( 'Import', 'jscfr' ); ?></h2>
-                        <p class="description"><?php esc_html_e( 'Paste JSON or upload a .json file to import field groups.', 'jscfr' ); ?></p>
-                        <textarea id="jscfr-import-json" class="large-text code" rows="10" placeholder='[{"id":"fg_xxx", "title":"...", ...}]'></textarea>
-                        <p>
-                            <input type="file" id="jscfr-import-file" accept=".json" />
-                        </p>
-                        <p>
-                            <button type="button" class="button button-primary" id="jscfr-import-btn">
-                                <span class="dashicons dashicons-upload" style="vertical-align:middle;margin-right:4px;"></span>
+                    <!-- ===== Import card ===== -->
+                    <div class="jscfr-ie-card">
+                        <div class="jscfr-ie-card-head">
+                            <div class="jscfr-ie-icon jscfr-ie-icon--import">
+                                <span class="dashicons dashicons-upload"></span>
+                            </div>
+                            <div>
+                                <h2 class="jscfr-ie-card-title"><?php esc_html_e( 'Import', 'jscfr' ); ?></h2>
+                                <p class="jscfr-ie-card-desc"><?php esc_html_e( 'Drop a .json file, choose one, or paste JSON below.', 'jscfr' ); ?></p>
+                            </div>
+                        </div>
+
+                        <label class="jscfr-ie-dropzone" id="jscfr-ie-dropzone">
+                            <input type="file" id="jscfr-import-file" accept=".json,application/json" hidden />
+                            <span class="dashicons dashicons-cloud-upload jscfr-ie-dropzone-icon"></span>
+                            <span class="jscfr-ie-dropzone-primary"><?php esc_html_e( 'Drop file here or click to browse', 'jscfr' ); ?></span>
+                            <span class="jscfr-ie-dropzone-secondary"><?php esc_html_e( '.json up to a few MB', 'jscfr' ); ?></span>
+                            <span class="jscfr-ie-dropzone-filename" id="jscfr-ie-filename"></span>
+                        </label>
+
+                        <details class="jscfr-ie-paste">
+                            <summary><?php esc_html_e( 'Or paste JSON', 'jscfr' ); ?></summary>
+                            <textarea id="jscfr-import-json" class="jscfr-ie-textarea" rows="8" placeholder='[{"id":"fg_xxx","title":"...","tabs":[...]}]'></textarea>
+                        </details>
+
+                        <div class="jscfr-ie-actions">
+                            <button type="button" class="button button-primary jscfr-ie-btn" id="jscfr-import-btn">
+                                <span class="dashicons dashicons-upload"></span>
                                 <?php esc_html_e( 'Import', 'jscfr' ); ?>
                             </button>
-                            <span id="jscfr-import-status"></span>
-                        </p>
+                            <span class="jscfr-ie-status" id="jscfr-import-status"></span>
+                        </div>
                     </div>
+
                 </div>
             </div>
             <?php

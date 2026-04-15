@@ -197,16 +197,49 @@
             });
         });
 
-        /* Import: file upload */
-        $(document).on('change.jscfr', '#jscfr-import-file', function () {
-            var file = this.files[0];
+        /* Import/Export page: Select-all + counter */
+        function jscfrIeUpdateCount() {
+            var total = $('.jscfr-export-cb').length;
+            var checked = $('.jscfr-export-cb:checked').length;
+            $('#jscfr-ie-count').text(checked);
+            $('#jscfr-ie-select-all').prop('checked', total > 0 && total === checked);
+        }
+        $(document).on('change.jscfr', '#jscfr-ie-select-all', function () {
+            $('.jscfr-export-cb').prop('checked', $(this).prop('checked'));
+            jscfrIeUpdateCount();
+        });
+        $(document).on('change.jscfr', '.jscfr-export-cb', jscfrIeUpdateCount);
+
+        /* Import: file upload (hidden input inside dropzone label) */
+        function jscfrIeReadFile(file) {
             if (!file) return;
+            $('#jscfr-ie-filename').text(file.name);
             var reader = new FileReader();
             reader.onload = function (e) {
                 $('#jscfr-import-json').val(e.target.result);
             };
             reader.readAsText(file);
+        }
+        $(document).on('change.jscfr', '#jscfr-import-file', function () {
+            jscfrIeReadFile(this.files[0]);
         });
+
+        /* Drag & drop on the dropzone */
+        var $dz = $('#jscfr-ie-dropzone');
+        if ($dz.length) {
+            $dz.on('dragover dragenter', function (e) {
+                e.preventDefault(); e.stopPropagation();
+                $dz.addClass('is-dragging');
+            });
+            $dz.on('dragleave dragend drop', function (e) {
+                e.preventDefault(); e.stopPropagation();
+                $dz.removeClass('is-dragging');
+            });
+            $dz.on('drop', function (e) {
+                var files = e.originalEvent.dataTransfer && e.originalEvent.dataTransfer.files;
+                if (files && files.length) jscfrIeReadFile(files[0]);
+            });
+        }
 
         /* Import */
         $(document).on('click.jscfr', '#jscfr-import-btn', function () {
