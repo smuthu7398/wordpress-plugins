@@ -40,7 +40,8 @@
 
 /* Table wrapped in a card */
 .jscfr-cpt-wrap #jscfr-cpt-list,
-.jscfr-cpt-wrap #jscfr-tax-list {
+.jscfr-cpt-wrap #jscfr-tax-list,
+.jscfr-cpt-wrap #jscfr-rel-list {
     margin-top: 0;
     border: 1px solid #e0e0e3;
     border-radius: 8px;
@@ -51,7 +52,8 @@
     border-spacing: 0;
 }
 .jscfr-cpt-wrap #jscfr-cpt-list thead th,
-.jscfr-cpt-wrap #jscfr-tax-list thead th {
+.jscfr-cpt-wrap #jscfr-tax-list thead th,
+.jscfr-cpt-wrap #jscfr-rel-list thead th {
     background: #fafafa;
     border-bottom: 1px solid #e0e0e3;
     padding: 14px 18px;
@@ -62,7 +64,8 @@
     color: #50575e;
 }
 .jscfr-cpt-wrap #jscfr-cpt-list tbody td,
-.jscfr-cpt-wrap #jscfr-tax-list tbody td {
+.jscfr-cpt-wrap #jscfr-tax-list tbody td,
+.jscfr-cpt-wrap #jscfr-rel-list tbody td {
     padding: 16px 18px;
     border-top: 1px solid #f0f0f1;
     vertical-align: middle;
@@ -71,9 +74,11 @@
     font-size: 14px;
 }
 .jscfr-cpt-wrap #jscfr-cpt-list tbody tr:first-child td,
-.jscfr-cpt-wrap #jscfr-tax-list tbody tr:first-child td { border-top: 0; }
+.jscfr-cpt-wrap #jscfr-tax-list tbody tr:first-child td,
+.jscfr-cpt-wrap #jscfr-rel-list tbody tr:first-child td { border-top: 0; }
 .jscfr-cpt-wrap #jscfr-cpt-list tbody tr:hover td,
-.jscfr-cpt-wrap #jscfr-tax-list tbody tr:hover td { background: #f7fafd; }
+.jscfr-cpt-wrap #jscfr-tax-list tbody tr:hover td,
+.jscfr-cpt-wrap #jscfr-rel-list tbody tr:hover td { background: #f7fafd; }
 
 .jscfr-cpt-wrap .jscfr-no-items td {
     color: #646970;
