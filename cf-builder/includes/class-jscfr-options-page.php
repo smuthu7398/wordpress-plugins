@@ -142,7 +142,7 @@ if ( ! class_exists( 'JSCFR_Options_Page' ) ) {
                     <?php endif; ?>
                 </div>
 
-                <div class="jscfr-mb-footer">
+                <div class="jscfr-mb-footer" id="jscfr-opt-footer" style="<?php echo empty( $pages ) ? 'display:none;' : ''; ?>">
                     <button type="button" class="button button-primary button-large" id="jscfr-opt-save-pages">
                         <?php esc_html_e( 'Save Pages', 'jscfr' ); ?>
                     </button>
@@ -176,17 +176,27 @@ if ( ! class_exists( 'JSCFR_Options_Page' ) ) {
                         '</div>';
                 }
 
+                function refreshFooter(){
+                    var has = $manager.find('.jscfr-opt-card').length > 0;
+                    $('#jscfr-opt-footer').toggle( has );
+                    if ( ! has && $manager.find('.jscfr-opt-empty').length === 0 ) {
+                        $manager.append('<div class="jscfr-opt-empty"><?php echo esc_js( __( 'No options pages yet. Click "Add New" to create one.', 'jscfr' ) ); ?></div>');
+                    }
+                }
+
                 // Add page
                 $('#jscfr-opt-add-page').on('click', function(e){
                     e.preventDefault();
                     $manager.find('.jscfr-opt-empty').remove();
                     var slug = 'opt_' + Math.random().toString(36).substr(2,6);
                     $manager.append( cardTemplate(slug) );
+                    refreshFooter();
                 });
 
                 // Remove
                 $manager.on('click', '.jscfr-opt-remove', function(){
                     $(this).closest('.jscfr-opt-card').remove();
+                    refreshFooter();
                 });
 
                 // Reflect title/slug into header live
