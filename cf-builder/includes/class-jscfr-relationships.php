@@ -508,6 +508,7 @@ if ( ! class_exists( 'JSCFR_Relationships' ) ) {
         public function enqueue_assets( $hook ) {
             // --- Relationships admin page ---
             if ( 'cf-builder_page_jscfr-relationships' === $hook ) {
+                wp_enqueue_script( 'jquery' );
                 wp_enqueue_style(
                     'jscfr-builder-css',
                     JSCFR_PLUGIN_URL . 'assets/css/jscfr-builder.css',
@@ -516,7 +517,8 @@ if ( ! class_exists( 'JSCFR_Relationships' ) ) {
                 );
 
                 $this->print_inline_styles();
-                $this->print_inline_scripts( 'admin' );
+                // Defer inline JS to the footer so jQuery is guaranteed to be loaded.
+                add_action( 'admin_print_footer_scripts', array( $this, 'print_admin_footer_scripts' ), 100 );
                 return;
             }
 
@@ -547,6 +549,20 @@ if ( ! class_exists( 'JSCFR_Relationships' ) ) {
 
             wp_enqueue_script( 'jquery-ui-sortable' );
             $this->print_inline_styles();
+            add_action( 'admin_print_footer_scripts', array( $this, 'print_metabox_footer_scripts' ), 100 );
+        }
+
+        /**
+         * Print admin-page inline JS in the footer (jQuery is guaranteed loaded by then).
+         */
+        public function print_admin_footer_scripts() {
+            $this->print_inline_scripts( 'admin' );
+        }
+
+        /**
+         * Print metabox inline JS in the footer (jQuery is guaranteed loaded by then).
+         */
+        public function print_metabox_footer_scripts() {
             $this->print_inline_scripts( 'metabox' );
         }
 
