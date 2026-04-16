@@ -39,88 +39,8 @@
     }
 
     /* ================================================================ */
-    /*  CPT: Add / Edit / Delete                                         */
+    /*  CPT form submit (full-page form, server-rendered values)         */
     /* ================================================================ */
-    $(document).on('click', '#jscfr-add-cpt', function() {
-        $('#jscfr-cpt-form-title').text('Add Custom Post Type');
-        $('#jscfr-cpt-form')[0].reset();
-        $('#jscfr-cpt-editing').val('');
-        $('#jscfr-cpt-slug').prop('readonly', false);
-        // Default supports
-        $('.jscfr-cpt-support').prop('checked', false);
-        $('.jscfr-cpt-support[value="title"]').prop('checked', true);
-        $('.jscfr-cpt-support[value="editor"]').prop('checked', true);
-        // Default visibility
-        $('#jscfr-cpt-public, #jscfr-cpt-publicly-queryable, #jscfr-cpt-show-ui, #jscfr-cpt-show-in-menu, #jscfr-cpt-show-in-nav, #jscfr-cpt-show-in-admin-bar, #jscfr-cpt-show-in-rest, #jscfr-cpt-has-archive').prop('checked', true);
-        $('#jscfr-cpt-hierarchical, #jscfr-cpt-exclude-search').prop('checked', false);
-        $('#jscfr-cpt-icon').val('dashicons-admin-post');
-        updateIconPreview();
-        $('#jscfr-cpt-form-modal').fadeIn(150);
-    });
-
-    $(document).on('click', '.jscfr-edit-cpt', function() {
-        var $row = $(this).closest('tr');
-        var slug = $row.data('slug');
-
-        $.post(jscfr_cpt.ajax_url, {
-            action: 'jscfr_get_cpt_data',
-            nonce:  jscfr_cpt.nonce,
-            slug:   slug
-        }, function() {
-            // We'll populate from stored option data via a sync approach
-        });
-
-        // For simplicity, we fetch all CPTs and populate
-        // This is done inline since we have the data in the page
-        $('#jscfr-cpt-form-title').text('Edit Custom Post Type');
-        $('#jscfr-cpt-editing').val(slug);
-        $('#jscfr-cpt-slug').val(slug).prop('readonly', true);
-        $('#jscfr-cpt-form-modal').fadeIn(150);
-
-        // Populate from AJAX
-        $.post(jscfr_cpt.ajax_url, {
-            action: 'jscfr_get_cpt_config',
-            nonce:  jscfr_cpt.nonce,
-            slug:   slug
-        }, function(res) {
-            if (!res.success) return;
-            var c = res.data;
-            $('#jscfr-cpt-singular').val(c.singular || '');
-            $('#jscfr-cpt-plural').val(c.plural || '');
-            $('#jscfr-cpt-icon').val(c.menu_icon || 'dashicons-admin-post');
-            updateIconPreview();
-            $('#jscfr-cpt-position').val(c.menu_position || 25);
-            $('#jscfr-cpt-rewrite-slug').val(c.rewrite_slug || '');
-
-            $('#jscfr-cpt-public').prop('checked', !!c.public);
-            $('#jscfr-cpt-publicly-queryable').prop('checked', c.publicly_queryable !== false);
-            $('#jscfr-cpt-show-ui').prop('checked', c.show_ui !== false);
-            $('#jscfr-cpt-show-in-menu').prop('checked', c.show_in_menu !== false);
-            $('#jscfr-cpt-show-in-nav').prop('checked', c.show_in_nav_menus !== false);
-            $('#jscfr-cpt-show-in-admin-bar').prop('checked', c.show_in_admin_bar !== false);
-            $('#jscfr-cpt-show-in-rest').prop('checked', c.show_in_rest !== false);
-            $('#jscfr-cpt-has-archive').prop('checked', !!c.has_archive);
-            $('#jscfr-cpt-hierarchical').prop('checked', !!c.hierarchical);
-            $('#jscfr-cpt-exclude-search').prop('checked', !!c.exclude_from_search);
-
-            // Supports
-            $('.jscfr-cpt-support').prop('checked', false);
-            if (c.supports && typeof c.supports === 'object') {
-                $.each(c.supports, function(key) {
-                    $('.jscfr-cpt-support[value="' + key + '"]').prop('checked', true);
-                });
-            }
-
-            // Taxonomies
-            $('.jscfr-cpt-tax').prop('checked', false);
-            if (c.taxonomies && Array.isArray(c.taxonomies)) {
-                c.taxonomies.forEach(function(t) {
-                    $('.jscfr-cpt-tax[value="' + t + '"]').prop('checked', true);
-                });
-            }
-        });
-    });
-
     $(document).on('submit', '#jscfr-cpt-form', function(e) {
         e.preventDefault();
 
@@ -158,7 +78,7 @@
 
         $.post(jscfr_cpt.ajax_url, data, function(res) {
             if (res.success) {
-                location.reload();
+                window.location.href = 'admin.php?page=jscfr-post-types';
             } else {
                 alert(res.data || 'Error saving post type.');
             }
@@ -180,54 +100,14 @@
     /* ================================================================ */
     /*  Taxonomy: Add / Edit / Delete                                    */
     /* ================================================================ */
-    $(document).on('click', '#jscfr-add-tax', function() {
-        $('#jscfr-tax-form-title').text('Add Custom Taxonomy');
-        $('#jscfr-tax-form')[0].reset();
-        $('#jscfr-tax-editing').val('');
-        $('#jscfr-tax-slug').prop('readonly', false);
-        $('#jscfr-tax-public, #jscfr-tax-publicly-queryable, #jscfr-tax-show-ui, #jscfr-tax-show-in-menu, #jscfr-tax-show-in-nav, #jscfr-tax-show-in-rest, #jscfr-tax-show-admin-column, #jscfr-tax-hierarchical').prop('checked', true);
-        $('#jscfr-tax-show-tagcloud').prop('checked', false);
-        $('.jscfr-tax-pt').prop('checked', false);
-        $('#jscfr-tax-form-modal').fadeIn(150);
-    });
-
-    $(document).on('click', '.jscfr-edit-tax', function() {
-        var $row = $(this).closest('tr');
-        var slug = $row.data('slug');
-
-        $('#jscfr-tax-form-title').text('Edit Custom Taxonomy');
-        $('#jscfr-tax-editing').val(slug);
-        $('#jscfr-tax-slug').val(slug).prop('readonly', true);
-        $('#jscfr-tax-form-modal').fadeIn(150);
-
-        $.post(jscfr_cpt.ajax_url, {
-            action: 'jscfr_get_tax_config',
-            nonce:  jscfr_cpt.nonce,
-            slug:   slug
-        }, function(res) {
-            if (!res.success) return;
-            var c = res.data;
-            $('#jscfr-tax-singular').val(c.singular || '');
-            $('#jscfr-tax-plural').val(c.plural || '');
-            $('#jscfr-tax-rewrite-slug').val(c.rewrite_slug || '');
-
-            $('#jscfr-tax-public').prop('checked', !!c.public);
-            $('#jscfr-tax-publicly-queryable').prop('checked', c.publicly_queryable !== false);
-            $('#jscfr-tax-show-ui').prop('checked', c.show_ui !== false);
-            $('#jscfr-tax-show-in-menu').prop('checked', c.show_in_menu !== false);
-            $('#jscfr-tax-show-in-nav').prop('checked', c.show_in_nav_menus !== false);
-            $('#jscfr-tax-show-in-rest').prop('checked', c.show_in_rest !== false);
-            $('#jscfr-tax-show-admin-column').prop('checked', c.show_admin_column !== false);
-            $('#jscfr-tax-show-tagcloud').prop('checked', !!c.show_tagcloud);
-            $('#jscfr-tax-hierarchical').prop('checked', c.hierarchical !== false);
-
-            $('.jscfr-tax-pt').prop('checked', false);
-            if (c.post_types && Array.isArray(c.post_types)) {
-                c.post_types.forEach(function(pt) {
-                    $('.jscfr-tax-pt[value="' + pt + '"]').prop('checked', true);
-                });
-            }
-        });
+    /* Tab switching for Meta Box–style form */
+    $(document).on('click', '.jscfr-mb-tab-nav li[data-jscfr-tab]', function() {
+        var $tabs = $(this).closest('.jscfr-mb-tabs');
+        var target = $(this).data('jscfr-tab');
+        $tabs.find('.jscfr-mb-tab-nav li').removeClass('active');
+        $(this).addClass('active');
+        $tabs.find('.jscfr-mb-tab-panel').removeClass('active');
+        $tabs.find('.jscfr-mb-tab-panel[data-jscfr-panel="' + target + '"]').addClass('active');
     });
 
     $(document).on('submit', '#jscfr-tax-form', function(e) {
@@ -260,7 +140,7 @@
 
         $.post(jscfr_cpt.ajax_url, data, function(res) {
             if (res.success) {
-                location.reload();
+                window.location.href = 'admin.php?page=jscfr-taxonomies';
             } else {
                 alert(res.data || 'Error saving taxonomy.');
             }
@@ -280,12 +160,30 @@
     });
 
     /* ================================================================ */
-    /*  Icon preview                                                     */
+    /*  Icon picker (visual grid + search)                               */
     /* ================================================================ */
-    function updateIconPreview() {
-        var val = $('#jscfr-cpt-icon').val();
-        $('#jscfr-cpt-icon-preview').attr('class', 'dashicons ' + val);
-    }
-    $(document).on('change', '#jscfr-cpt-icon', updateIconPreview);
+    $(document).on('click', '.jscfr-icon-cell', function(e) {
+        e.preventDefault();
+        var $cell = $(this);
+        var icon  = $cell.data('icon');
+        $cell.closest('.jscfr-icon-picker').find('.jscfr-icon-cell').removeClass('active');
+        $cell.addClass('active');
+        $('#jscfr-cpt-icon').val(icon);
+        $('#jscfr-cpt-icon-preview').attr('class', 'dashicons ' + icon);
+        $('.jscfr-icon-picker-value').text(icon.replace('dashicons-', ''));
+    });
+
+    $(document).on('input', '.jscfr-icon-picker-search-input', function() {
+        var q      = $(this).val().trim().toLowerCase();
+        var $grid  = $(this).closest('.jscfr-icon-picker').find('.jscfr-icon-picker-grid');
+        var $cells = $grid.find('.jscfr-icon-cell');
+        var visible = 0;
+        $cells.each(function() {
+            var match = !q || $(this).data('search').indexOf(q) !== -1;
+            $(this).toggle(match);
+            if (match) visible++;
+        });
+        $grid.find('.jscfr-icon-picker-empty').prop('hidden', visible > 0);
+    });
 
 })(jQuery);

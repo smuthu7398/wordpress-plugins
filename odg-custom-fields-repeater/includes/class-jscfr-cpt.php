@@ -112,6 +112,11 @@ if ( ! class_exists( 'JSCFR_CPT' ) ) {
                 $supports = array( 'title', 'editor' );
             }
 
+            // Ensure theme supports post thumbnails for this CPT so the Featured Image metabox appears.
+            if ( in_array( 'thumbnail', $supports, true ) ) {
+                add_theme_support( 'post-thumbnails', array( $slug ) );
+            }
+
             $args = array(
                 'labels'              => $labels,
                 'public'              => isset( $cpt['public'] ) ? (bool) $cpt['public'] : true,
@@ -253,11 +258,33 @@ if ( ! class_exists( 'JSCFR_CPT' ) ) {
             if ( ! current_user_can( 'manage_options' ) ) {
                 wp_die( esc_html__( 'Unauthorized', 'jscfr' ) );
             }
+            $action = isset( $_GET['action'] ) ? sanitize_key( wp_unslash( $_GET['action'] ) ) : '';
+            if ( 'new' === $action ) {
+                $this->render_cpt_form_page( array(), '' );
+                return;
+            }
+            if ( 'edit' === $action ) {
+                $slug   = isset( $_GET['slug'] ) ? sanitize_key( wp_unslash( $_GET['slug'] ) ) : '';
+                $cpts   = get_option( self::OPT_CPTS, array() );
+                $config = array();
+                if ( is_array( $cpts ) ) {
+                    foreach ( $cpts as $c ) {
+                        if ( is_array( $c ) && isset( $c['slug'] ) && $c['slug'] === $slug ) {
+                            $config = $c;
+                            break;
+                        }
+                    }
+                }
+                $this->render_cpt_form_page( $config, $slug );
+                return;
+            }
+
             $cpts = get_option( self::OPT_CPTS, array() );
             if ( ! is_array( $cpts ) ) $cpts = array();
+            $add_url = esc_url( add_query_arg( array( 'page' => 'jscfr-post-types', 'action' => 'new' ), admin_url( 'admin.php' ) ) );
             ?>
             <div class="wrap jscfr-cpt-wrap">
-                <h1><?php esc_html_e( 'Custom Post Types', 'jscfr' ); ?> <button type="button" class="page-title-action" id="jscfr-add-cpt"><?php esc_html_e( 'Add New', 'jscfr' ); ?></button></h1>
+                <h1><?php esc_html_e( 'Custom Post Types', 'jscfr' ); ?> <a href="<?php echo $add_url; ?>" class="page-title-action"><?php esc_html_e( 'Add New', 'jscfr' ); ?></a></h1>
 
                 <table class="wp-list-table widefat fixed striped" id="jscfr-cpt-list">
                     <thead>
@@ -267,141 +294,297 @@ if ( ! class_exists( 'JSCFR_CPT' ) ) {
                             <th><?php esc_html_e( 'Plural', 'jscfr' ); ?></th>
                             <th><?php esc_html_e( 'Public', 'jscfr' ); ?></th>
                             <th><?php esc_html_e( 'REST', 'jscfr' ); ?></th>
-                            <th style="width:140px;"><?php esc_html_e( 'Actions', 'jscfr' ); ?></th>
+                            <th style="width:160px;"><?php esc_html_e( 'Actions', 'jscfr' ); ?></th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if ( empty( $cpts ) ) : ?>
                             <tr class="jscfr-no-items"><td colspan="6"><?php esc_html_e( 'No custom post types registered yet.', 'jscfr' ); ?></td></tr>
                         <?php else : ?>
-                            <?php foreach ( $cpts as $cpt ) : ?>
+                            <?php foreach ( $cpts as $cpt ) :
+                                $edit_url = esc_url( add_query_arg( array( 'page' => 'jscfr-post-types', 'action' => 'edit', 'slug' => $cpt['slug'] ), admin_url( 'admin.php' ) ) );
+                                ?>
                                 <tr data-slug="<?php echo esc_attr( $cpt['slug'] ); ?>">
-                                    <td><strong><?php echo esc_html( $cpt['slug'] ); ?></strong></td>
+                                    <td class="jscfr-col-slug"><a href="<?php echo $edit_url; ?>" class="jscfr-slug-link"><?php echo esc_html( $cpt['slug'] ); ?></a></td>
                                     <td><?php echo esc_html( $cpt['singular'] ); ?></td>
                                     <td><?php echo esc_html( $cpt['plural'] ); ?></td>
-                                    <td><?php echo ! empty( $cpt['public'] ) ? '&#10003;' : '&mdash;'; ?></td>
-                                    <td><?php echo ! empty( $cpt['show_in_rest'] ) ? '&#10003;' : '&mdash;'; ?></td>
                                     <td>
-                                        <button type="button" class="button button-small jscfr-edit-cpt"><?php esc_html_e( 'Edit', 'jscfr' ); ?></button>
-                                        <button type="button" class="button button-small button-link-delete jscfr-delete-cpt"><?php esc_html_e( 'Delete', 'jscfr' ); ?></button>
+                                        <?php if ( ! empty( $cpt['public'] ) ) : ?>
+                                            <span class="jscfr-badge jscfr-badge-yes"><?php esc_html_e( 'Yes', 'jscfr' ); ?></span>
+                                        <?php else : ?>
+                                            <span class="jscfr-badge jscfr-badge-no"><?php esc_html_e( 'No', 'jscfr' ); ?></span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if ( ! empty( $cpt['show_in_rest'] ) ) : ?>
+                                            <span class="jscfr-badge jscfr-badge-yes"><?php esc_html_e( 'Yes', 'jscfr' ); ?></span>
+                                        <?php else : ?>
+                                            <span class="jscfr-badge jscfr-badge-no"><?php esc_html_e( 'No', 'jscfr' ); ?></span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="jscfr-col-actions">
+                                        <a href="<?php echo $edit_url; ?>" class="button jscfr-btn-ghost"><?php esc_html_e( 'Edit', 'jscfr' ); ?></a>
+                                        <button type="button" class="button jscfr-btn-ghost jscfr-btn-danger jscfr-delete-cpt"><?php esc_html_e( 'Delete', 'jscfr' ); ?></button>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </tbody>
                 </table>
-
-                <?php $this->render_cpt_form(); ?>
             </div>
             <?php
         }
 
-        private function render_cpt_form() {
-            $dashicons = array( 'dashicons-admin-post', 'dashicons-admin-page', 'dashicons-admin-media', 'dashicons-admin-comments', 'dashicons-admin-users', 'dashicons-admin-tools', 'dashicons-admin-settings', 'dashicons-admin-site', 'dashicons-admin-generic', 'dashicons-admin-home', 'dashicons-admin-network', 'dashicons-admin-appearance', 'dashicons-admin-plugins', 'dashicons-format-standard', 'dashicons-format-aside', 'dashicons-format-image', 'dashicons-format-gallery', 'dashicons-format-video', 'dashicons-format-audio', 'dashicons-format-chat', 'dashicons-format-status', 'dashicons-format-quote', 'dashicons-cart', 'dashicons-products', 'dashicons-store', 'dashicons-portfolio', 'dashicons-awards', 'dashicons-businessman', 'dashicons-groups', 'dashicons-tickets-alt', 'dashicons-calendar-alt', 'dashicons-location', 'dashicons-building', 'dashicons-phone', 'dashicons-email-alt', 'dashicons-star-filled', 'dashicons-heart', 'dashicons-book', 'dashicons-tag', 'dashicons-category', 'dashicons-archive', 'dashicons-clipboard', 'dashicons-chart-bar', 'dashicons-list-view', 'dashicons-grid-view', 'dashicons-megaphone', 'dashicons-shield', 'dashicons-car', 'dashicons-food', 'dashicons-hammer', 'dashicons-art', 'dashicons-palmtree', 'dashicons-pets', 'dashicons-games', 'dashicons-money-alt' );
+        private function render_cpt_form_page( $cpt = array(), $slug = '' ) {
+            $dashicons = array(
+                'admin-appearance','admin-collapse','admin-comments','admin-generic','admin-home','admin-links','admin-media','admin-network','admin-page','admin-plugins','admin-post','admin-settings','admin-site-alt','admin-site-alt2','admin-site-alt3','admin-site','admin-tools','admin-users','admin-customizer','admin-multisite',
+                'album','align-center','align-left','align-none','align-right','align-full-width','align-pull-left','align-pull-right','align-wide','analytics','archive','arrow-down-alt','arrow-down-alt2','arrow-down','arrow-left-alt','arrow-left-alt2','arrow-left','arrow-right-alt','arrow-right-alt2','arrow-right','arrow-up-alt','arrow-up-alt2','arrow-up','art','awards',
+                'backup','bank','bell','block-default','book','book-alt','buddicons-activity','buddicons-bbpress-logo','buddicons-buddypress-logo','buddicons-community','buddicons-forums','buddicons-friends','buddicons-groups','buddicons-pm','buddicons-replies','buddicons-topics','buddicons-tracking','building','businessman','businessperson','businesswoman','button',
+                'calendar-alt','calendar','camera-alt','camera','car','cart','category','chart-area','chart-bar','chart-line','chart-pie','clipboard','clock','cloud-saved','cloud-upload','cloud','code-standards','coffee','color-picker','columns','controls-back','controls-forward','controls-pause','controls-play','controls-repeat','controls-skipback','controls-skipforward','controls-volumeoff','controls-volumeon','cover-image',
+                'dashboard','database-add','database-export','database-import','database-remove','database-view','database','desktop','dismiss','download',
+                'edit-large','edit-page','edit','editor-aligncenter','editor-alignleft','editor-alignright','editor-bold','editor-break','editor-code','editor-contract','editor-customchar','editor-expand','editor-help','editor-indent','editor-insertmore','editor-italic','editor-justify','editor-kitchensink','editor-ltr','editor-ol-rtl','editor-ol','editor-outdent','editor-paragraph','editor-paste-text','editor-paste-word','editor-quote','editor-removeformatting','editor-rtl','editor-spellcheck','editor-strikethrough','editor-table','editor-textcolor','editor-ul','editor-underline','editor-unlink','editor-video','ellipsis','email-alt','email-alt2','email','embed-audio','embed-generic','embed-photo','embed-post','embed-video','excerpt-view','exit','external',
+                'facebook-alt','facebook','feedback','filter','flag','food','format-aside','format-audio','format-chat','format-gallery','format-image','format-quote','format-status','format-video','forms','fullscreen-alt','fullscreen-exit-alt',
+                'games','google','googleplus','grid-view','groups',
+                'hammer','heading','heart','hidden','hourglass',
+                'id-alt','id','image-crop','image-filter','image-flip-horizontal','image-flip-vertical','image-rotate-left','image-rotate-right','image-rotate','images-alt','images-alt2','index-card','info','insert-after','insert-before','insert','instagram',
+                'laptop','layout','leftright','lightbulb','linkedin','list-view','location-alt','location','lock','marker','media-archive','media-audio','media-code','media-default','media-document','media-interactive','media-spreadsheet','media-text','media-video','megaphone','menu-alt','menu-alt2','menu-alt3','menu','microphone','migrate','minus','money-alt','money','move','nametag','networking','no-alt','no','open-folder',
+                'palmtree','paperclip','pdf','performance','pets','phone','playlist-audio','playlist-video','plus-alt','plus-alt2','plus','portfolio','post-status','pressthis','printer','privacy','products',
+                'randomize','redo','remove','rest-api','rss','saved','schedule','screenoptions','search','share-alt','share-alt2','share','shield-alt','shield','shortcode','slides','smartphone','smiley','sort','sos','star-empty','star-filled','star-half','sticky','store','superhero-alt','superhero',
+                'table-col-after','table-col-before','table-col-delete','table-row-after','table-row-before','table-row-delete','tablet','tag','tagcloud','testimonial','text-page','text','thumbs-down','thumbs-up','tickets-alt','tickets','tide','translation','trash','twitter-alt','twitter','twitch',
+                'undo','universal-access-alt','universal-access','unlock','update-alt','update','upload',
+                'vault','video-alt','video-alt2','video-alt3','visibility',
+                'warning','welcome-add-page','welcome-comments','welcome-learn-more','welcome-view-site','welcome-widgets-menus','welcome-write-blog','whatsapp','wordpress-alt','wordpress','xing','yes-alt','yes','youtube',
+            );
+            $dashicons = array_map( function( $i ) { return 'dashicons-' . $i; }, $dashicons );
+
+            $is_edit  = ! empty( $slug );
+            $list_url = esc_url( add_query_arg( array( 'page' => 'jscfr-post-types' ), admin_url( 'admin.php' ) ) );
+            $title    = $is_edit
+                ? sprintf( __( 'Edit Post Type: %s', 'jscfr' ), $slug )
+                : __( 'Add New Post Type', 'jscfr' );
+
+            $val = function( $key, $default = '' ) use ( $cpt ) {
+                return isset( $cpt[ $key ] ) ? $cpt[ $key ] : $default;
+            };
+            $bool_checked = function( $key, $default_on ) use ( $cpt ) {
+                if ( ! array_key_exists( $key, $cpt ) ) {
+                    return $default_on;
+                }
+                return ! empty( $cpt[ $key ] );
+            };
+
+            $supports_saved = is_array( $val( 'supports', array() ) ) ? $val( 'supports', array() ) : array();
+            $is_supported   = function( $k ) use ( $supports_saved, $is_edit ) {
+                if ( ! $is_edit ) {
+                    return in_array( $k, array( 'title', 'editor' ), true );
+                }
+                if ( isset( $supports_saved[ $k ] ) ) return ! empty( $supports_saved[ $k ] );
+                return in_array( $k, $supports_saved, true );
+            };
+
+            $taxes_saved = is_array( $val( 'taxonomies', array() ) ) ? $val( 'taxonomies', array() ) : array();
+
+            $support_opts = array(
+                'title'           => __( 'Title', 'jscfr' ),
+                'editor'          => __( 'Editor', 'jscfr' ),
+                'thumbnail'       => __( 'Featured Image', 'jscfr' ),
+                'excerpt'         => __( 'Excerpt', 'jscfr' ),
+                'comments'        => __( 'Comments', 'jscfr' ),
+                'revisions'       => __( 'Revisions', 'jscfr' ),
+                'author'          => __( 'Author', 'jscfr' ),
+                'page-attributes' => __( 'Page Attributes', 'jscfr' ),
+                'trackbacks'      => __( 'Trackbacks', 'jscfr' ),
+                'custom-fields'   => __( 'Custom Fields', 'jscfr' ),
+            );
+
+            $tax_choices  = array( 'category' => __( 'Category', 'jscfr' ), 'post_tag' => __( 'Tag', 'jscfr' ) );
+            $custom_taxes = get_option( self::OPT_TAXES, array() );
+            if ( is_array( $custom_taxes ) ) {
+                foreach ( $custom_taxes as $ct ) {
+                    if ( ! empty( $ct['slug'] ) ) {
+                        $tax_choices[ $ct['slug'] ] = ! empty( $ct['plural'] ) ? $ct['plural'] : $ct['slug'];
+                    }
+                }
+            }
+
+            $icon_val     = $val( 'menu_icon', 'dashicons-admin-post' );
+            $position_val = $val( 'menu_position', 25 );
             ?>
-            <div id="jscfr-cpt-form-modal" class="jscfr-modal" style="display:none;">
-                <div class="jscfr-modal-content">
-                    <h2 id="jscfr-cpt-form-title"><?php esc_html_e( 'Add Custom Post Type', 'jscfr' ); ?></h2>
-                    <form id="jscfr-cpt-form">
-                        <input type="hidden" id="jscfr-cpt-editing" value="" />
-                        <table class="form-table">
-                            <tr>
-                                <th><label for="jscfr-cpt-slug"><?php esc_html_e( 'Slug (key)', 'jscfr' ); ?></label></th>
-                                <td><input type="text" id="jscfr-cpt-slug" class="regular-text" maxlength="20" pattern="[a-z0-9_-]+" required /> <p class="description"><?php esc_html_e( 'Lowercase, no spaces. Max 20 chars.', 'jscfr' ); ?></p></td>
-                            </tr>
-                            <tr>
-                                <th><label for="jscfr-cpt-singular"><?php esc_html_e( 'Singular Name', 'jscfr' ); ?></label></th>
-                                <td><input type="text" id="jscfr-cpt-singular" class="regular-text" required /></td>
-                            </tr>
-                            <tr>
-                                <th><label for="jscfr-cpt-plural"><?php esc_html_e( 'Plural Name', 'jscfr' ); ?></label></th>
-                                <td><input type="text" id="jscfr-cpt-plural" class="regular-text" required /></td>
-                            </tr>
-                            <tr>
-                                <th><?php esc_html_e( 'Supports', 'jscfr' ); ?></th>
-                                <td>
-                                    <?php
-                                    $support_opts = array(
-                                        'title'           => __( 'Title', 'jscfr' ),
-                                        'editor'          => __( 'Editor', 'jscfr' ),
-                                        'thumbnail'       => __( 'Featured Image', 'jscfr' ),
-                                        'excerpt'         => __( 'Excerpt', 'jscfr' ),
-                                        'comments'        => __( 'Comments', 'jscfr' ),
-                                        'revisions'       => __( 'Revisions', 'jscfr' ),
-                                        'author'          => __( 'Author', 'jscfr' ),
-                                        'page-attributes' => __( 'Page Attributes', 'jscfr' ),
-                                        'trackbacks'      => __( 'Trackbacks', 'jscfr' ),
-                                        'custom-fields'   => __( 'Custom Fields', 'jscfr' ),
-                                    );
-                                    foreach ( $support_opts as $skey => $slabel ) :
-                                    ?>
-                                        <label style="display:inline-block;margin-right:14px;"><input type="checkbox" class="jscfr-cpt-support" value="<?php echo esc_attr( $skey ); ?>" /> <?php echo esc_html( $slabel ); ?></label>
-                                    <?php endforeach; ?>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label for="jscfr-cpt-icon"><?php esc_html_e( 'Menu Icon', 'jscfr' ); ?></label></th>
-                                <td>
-                                    <select id="jscfr-cpt-icon">
-                                        <?php foreach ( $dashicons as $di ) : ?>
-                                            <option value="<?php echo esc_attr( $di ); ?>"><?php echo esc_html( str_replace( 'dashicons-', '', $di ) ); ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                    <span id="jscfr-cpt-icon-preview" class="dashicons dashicons-admin-post" style="font-size:20px;vertical-align:middle;margin-left:8px;"></span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label for="jscfr-cpt-position"><?php esc_html_e( 'Menu Position', 'jscfr' ); ?></label></th>
-                                <td><input type="number" id="jscfr-cpt-position" value="25" min="0" max="100" style="width:80px;" /></td>
-                            </tr>
-                            <tr>
-                                <th><?php esc_html_e( 'Visibility', 'jscfr' ); ?></th>
-                                <td>
-                                    <label><input type="checkbox" id="jscfr-cpt-public" checked /> <?php esc_html_e( 'Public', 'jscfr' ); ?></label><br />
-                                    <label><input type="checkbox" id="jscfr-cpt-publicly-queryable" checked /> <?php esc_html_e( 'Publicly Queryable', 'jscfr' ); ?></label><br />
-                                    <label><input type="checkbox" id="jscfr-cpt-show-ui" checked /> <?php esc_html_e( 'Show UI', 'jscfr' ); ?></label><br />
-                                    <label><input type="checkbox" id="jscfr-cpt-show-in-menu" checked /> <?php esc_html_e( 'Show in Menu', 'jscfr' ); ?></label><br />
-                                    <label><input type="checkbox" id="jscfr-cpt-show-in-nav" checked /> <?php esc_html_e( 'Show in Nav Menus', 'jscfr' ); ?></label><br />
-                                    <label><input type="checkbox" id="jscfr-cpt-show-in-admin-bar" checked /> <?php esc_html_e( 'Show in Admin Bar', 'jscfr' ); ?></label><br />
-                                    <label><input type="checkbox" id="jscfr-cpt-show-in-rest" checked /> <?php esc_html_e( 'Show in REST API (Gutenberg)', 'jscfr' ); ?></label>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><?php esc_html_e( 'Options', 'jscfr' ); ?></th>
-                                <td>
-                                    <label><input type="checkbox" id="jscfr-cpt-has-archive" checked /> <?php esc_html_e( 'Has Archive', 'jscfr' ); ?></label><br />
-                                    <label><input type="checkbox" id="jscfr-cpt-hierarchical" /> <?php esc_html_e( 'Hierarchical (like Pages)', 'jscfr' ); ?></label><br />
-                                    <label><input type="checkbox" id="jscfr-cpt-exclude-search" /> <?php esc_html_e( 'Exclude from Search', 'jscfr' ); ?></label>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label for="jscfr-cpt-rewrite-slug"><?php esc_html_e( 'Rewrite Slug', 'jscfr' ); ?></label></th>
-                                <td><input type="text" id="jscfr-cpt-rewrite-slug" class="regular-text" placeholder="<?php esc_attr_e( 'Leave empty to use slug', 'jscfr' ); ?>" /></td>
-                            </tr>
-                            <tr>
-                                <th><?php esc_html_e( 'Taxonomies', 'jscfr' ); ?></th>
-                                <td id="jscfr-cpt-taxonomies-wrap">
-                                    <label><input type="checkbox" class="jscfr-cpt-tax" value="category" /> <?php esc_html_e( 'Category', 'jscfr' ); ?></label><br />
-                                    <label><input type="checkbox" class="jscfr-cpt-tax" value="post_tag" /> <?php esc_html_e( 'Tag', 'jscfr' ); ?></label>
-                                    <?php
-                                    $custom_taxes = get_option( self::OPT_TAXES, array() );
-                                    if ( is_array( $custom_taxes ) ) {
-                                        foreach ( $custom_taxes as $ct ) {
-                                            if ( ! empty( $ct['slug'] ) ) {
-                                                echo '<br /><label><input type="checkbox" class="jscfr-cpt-tax" value="' . esc_attr( $ct['slug'] ) . '" /> ' . esc_html( ! empty( $ct['plural'] ) ? $ct['plural'] : $ct['slug'] ) . '</label>';
-                                            }
-                                        }
-                                    }
-                                    ?>
-                                </td>
-                            </tr>
-                        </table>
-                        <p class="submit">
-                            <button type="submit" class="button button-primary"><?php esc_html_e( 'Save Post Type', 'jscfr' ); ?></button>
-                            <button type="button" class="button jscfr-modal-cancel"><?php esc_html_e( 'Cancel', 'jscfr' ); ?></button>
-                        </p>
-                    </form>
+            <div class="wrap jscfr-cpt-wrap jscfr-mb-page">
+                <div class="jscfr-mb-page-header">
+                    <h1 class="wp-heading-inline"><?php echo esc_html( $title ); ?></h1>
+                    <a href="<?php echo $list_url; ?>" class="page-title-action"><?php esc_html_e( '← Back to Post Types', 'jscfr' ); ?></a>
                 </div>
+                <hr class="wp-header-end" />
+
+                <form id="jscfr-cpt-form" class="jscfr-mb-style">
+                    <input type="hidden" id="jscfr-cpt-editing" value="<?php echo esc_attr( $slug ); ?>" />
+
+                    <div class="jscfr-mb-tabs">
+                        <ul class="jscfr-mb-tab-nav" role="tablist">
+                            <li class="active" data-jscfr-tab="general"><?php esc_html_e( 'General', 'jscfr' ); ?></li>
+                            <li data-jscfr-tab="supports"><?php esc_html_e( 'Supports & Taxonomies', 'jscfr' ); ?></li>
+                            <li data-jscfr-tab="visibility"><?php esc_html_e( 'Visibility', 'jscfr' ); ?></li>
+                            <li data-jscfr-tab="advanced"><?php esc_html_e( 'Advanced', 'jscfr' ); ?></li>
+                        </ul>
+
+                        <div class="jscfr-mb-tab-panel active" data-jscfr-panel="general">
+                            <div class="jscfr-mb-row">
+                                <label for="jscfr-cpt-plural"><?php esc_html_e( 'Plural name', 'jscfr' ); ?><span class="jscfr-mb-req">*</span></label>
+                                <div class="jscfr-mb-control"><input type="text" id="jscfr-cpt-plural" value="<?php echo esc_attr( $val( 'plural' ) ); ?>" required /></div>
+                            </div>
+                            <div class="jscfr-mb-row">
+                                <label for="jscfr-cpt-singular"><?php esc_html_e( 'Singular name', 'jscfr' ); ?><span class="jscfr-mb-req">*</span></label>
+                                <div class="jscfr-mb-control"><input type="text" id="jscfr-cpt-singular" value="<?php echo esc_attr( $val( 'singular' ) ); ?>" required /></div>
+                            </div>
+                            <div class="jscfr-mb-row">
+                                <label for="jscfr-cpt-slug"><?php esc_html_e( 'Slug', 'jscfr' ); ?><span class="jscfr-mb-req">*</span></label>
+                                <div class="jscfr-mb-control">
+                                    <input type="text" id="jscfr-cpt-slug" value="<?php echo esc_attr( $slug ); ?>" maxlength="20" pattern="[a-z0-9_-]+" required <?php echo $is_edit ? 'readonly' : ''; ?> />
+                                    <p class="jscfr-mb-desc"><?php esc_html_e( 'Lowercase, no spaces. Max 20 chars.', 'jscfr' ); ?></p>
+                                </div>
+                            </div>
+                            <div class="jscfr-mb-row">
+                                <label><?php esc_html_e( 'Menu Icon', 'jscfr' ); ?></label>
+                                <div class="jscfr-mb-control">
+                                    <div class="jscfr-icon-picker">
+                                        <input type="hidden" id="jscfr-cpt-icon" value="<?php echo esc_attr( $icon_val ); ?>" />
+                                        <div class="jscfr-icon-picker-toolbar">
+                                            <div class="jscfr-icon-picker-selected">
+                                                <span id="jscfr-cpt-icon-preview" class="dashicons <?php echo esc_attr( $icon_val ); ?>"></span>
+                                                <code class="jscfr-icon-picker-value"><?php echo esc_html( str_replace( 'dashicons-', '', $icon_val ) ); ?></code>
+                                            </div>
+                                            <div class="jscfr-icon-picker-search">
+                                                <span class="dashicons dashicons-search"></span>
+                                                <input type="text" class="jscfr-icon-picker-search-input" placeholder="<?php esc_attr_e( 'Search icons…', 'jscfr' ); ?>" />
+                                            </div>
+                                        </div>
+                                        <div class="jscfr-icon-picker-grid">
+                                            <?php foreach ( $dashicons as $di ) :
+                                                $name  = str_replace( 'dashicons-', '', $di );
+                                                $label = str_replace( '-', ' ', $name );
+                                                ?>
+                                                <button type="button"
+                                                    class="jscfr-icon-cell <?php echo $icon_val === $di ? 'active' : ''; ?>"
+                                                    data-icon="<?php echo esc_attr( $di ); ?>"
+                                                    data-search="<?php echo esc_attr( strtolower( $label ) ); ?>"
+                                                    title="<?php echo esc_attr( $name ); ?>">
+                                                    <span class="dashicons <?php echo esc_attr( $di ); ?>"></span>
+                                                    <span class="jscfr-icon-cell-label"><?php echo esc_html( $label ); ?></span>
+                                                </button>
+                                            <?php endforeach; ?>
+                                            <p class="jscfr-icon-picker-empty" hidden><?php esc_html_e( 'No icons match your search.', 'jscfr' ); ?></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="jscfr-mb-row">
+                                <label for="jscfr-cpt-position"><?php esc_html_e( 'Menu Position', 'jscfr' ); ?></label>
+                                <div class="jscfr-mb-control">
+                                    <input type="number" id="jscfr-cpt-position" value="<?php echo esc_attr( $position_val ); ?>" min="0" max="100" class="jscfr-mb-number" />
+                                    <p class="jscfr-mb-desc"><?php esc_html_e( 'Menu order (0–100). Lower numbers appear higher in the admin menu.', 'jscfr' ); ?></p>
+                                </div>
+                            </div>
+                            <div class="jscfr-mb-row jscfr-mb-row-toggle">
+                                <label><?php esc_html_e( 'Public', 'jscfr' ); ?></label>
+                                <div class="jscfr-mb-control">
+                                    <label class="jscfr-toggle"><input type="checkbox" id="jscfr-cpt-public" <?php checked( $bool_checked( 'public', true ) ); ?> /><span class="jscfr-toggle-slider"></span></label>
+                                    <span class="jscfr-mb-toggle-desc"><?php esc_html_e( 'Whether the post type is intended to be used publicly, visible on the front-end.', 'jscfr' ); ?></span>
+                                </div>
+                            </div>
+                            <div class="jscfr-mb-row jscfr-mb-row-toggle">
+                                <label><?php esc_html_e( 'Hierarchical', 'jscfr' ); ?></label>
+                                <div class="jscfr-mb-control">
+                                    <label class="jscfr-toggle"><input type="checkbox" id="jscfr-cpt-hierarchical" <?php checked( $bool_checked( 'hierarchical', false ) ); ?> /><span class="jscfr-toggle-slider"></span></label>
+                                    <span class="jscfr-mb-toggle-desc"><?php esc_html_e( 'Whether the post type is hierarchical (e.g. like pages with parent/child).', 'jscfr' ); ?></span>
+                                </div>
+                            </div>
+                            <div class="jscfr-mb-row jscfr-mb-row-toggle">
+                                <label><?php esc_html_e( 'Has Archive', 'jscfr' ); ?></label>
+                                <div class="jscfr-mb-control">
+                                    <label class="jscfr-toggle"><input type="checkbox" id="jscfr-cpt-has-archive" <?php checked( $bool_checked( 'has_archive', true ) ); ?> /><span class="jscfr-toggle-slider"></span></label>
+                                    <span class="jscfr-mb-toggle-desc"><?php esc_html_e( 'Enables a post type archive at /slug/.', 'jscfr' ); ?></span>
+                                </div>
+                            </div>
+                            <div class="jscfr-mb-row jscfr-mb-row-toggle">
+                                <label><?php esc_html_e( 'Exclude from Search', 'jscfr' ); ?></label>
+                                <div class="jscfr-mb-control">
+                                    <label class="jscfr-toggle"><input type="checkbox" id="jscfr-cpt-exclude-search" <?php checked( $bool_checked( 'exclude_from_search', false ) ); ?> /><span class="jscfr-toggle-slider"></span></label>
+                                    <span class="jscfr-mb-toggle-desc"><?php esc_html_e( 'Exclude posts of this type from front-end search results.', 'jscfr' ); ?></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="jscfr-mb-tab-panel" data-jscfr-panel="supports">
+                            <div class="jscfr-mb-row">
+                                <label><?php esc_html_e( 'Supports', 'jscfr' ); ?></label>
+                                <div class="jscfr-mb-control">
+                                    <div class="jscfr-mb-chips">
+                                        <?php foreach ( $support_opts as $skey => $slabel ) : ?>
+                                            <label class="jscfr-mb-chip">
+                                                <input type="checkbox" class="jscfr-cpt-support" value="<?php echo esc_attr( $skey ); ?>" <?php checked( $is_supported( $skey ) ); ?> />
+                                                <span><?php echo esc_html( $slabel ); ?></span>
+                                            </label>
+                                        <?php endforeach; ?>
+                                    </div>
+                                    <p class="jscfr-mb-desc"><?php esc_html_e( 'Features available on the post editor for this post type.', 'jscfr' ); ?></p>
+                                </div>
+                            </div>
+                            <div class="jscfr-mb-row">
+                                <label><?php esc_html_e( 'Taxonomies', 'jscfr' ); ?></label>
+                                <div class="jscfr-mb-control" id="jscfr-cpt-taxonomies-wrap">
+                                    <div class="jscfr-mb-chips">
+                                        <?php foreach ( $tax_choices as $tslug => $tlabel ) : ?>
+                                            <label class="jscfr-mb-chip">
+                                                <input type="checkbox" class="jscfr-cpt-tax" value="<?php echo esc_attr( $tslug ); ?>" <?php checked( in_array( $tslug, $taxes_saved, true ) ); ?> />
+                                                <span><?php echo esc_html( $tlabel ); ?></span>
+                                            </label>
+                                        <?php endforeach; ?>
+                                    </div>
+                                    <p class="jscfr-mb-desc"><?php esc_html_e( 'Taxonomies this post type is associated with.', 'jscfr' ); ?></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="jscfr-mb-tab-panel" data-jscfr-panel="visibility">
+                            <?php
+                            $vis_toggles = array(
+                                'jscfr-cpt-publicly-queryable' => array( 'publicly_queryable', __( 'Publicly Queryable', 'jscfr' ), __( 'Whether queries can be performed on the front-end.', 'jscfr' ), true ),
+                                'jscfr-cpt-show-ui'            => array( 'show_ui', __( 'Show UI', 'jscfr' ), __( 'Generate a default UI for managing this post type in the admin.', 'jscfr' ), true ),
+                                'jscfr-cpt-show-in-menu'       => array( 'show_in_menu', __( 'Show in Menu', 'jscfr' ), __( 'Show the post type in the admin menu.', 'jscfr' ), true ),
+                                'jscfr-cpt-show-in-nav'        => array( 'show_in_nav_menus', __( 'Show in Nav Menus', 'jscfr' ), __( 'Make this post type available for selection in navigation menus.', 'jscfr' ), true ),
+                                'jscfr-cpt-show-in-admin-bar'  => array( 'show_in_admin_bar', __( 'Show in Admin Bar', 'jscfr' ), __( 'Make this post type available via the WordPress admin bar.', 'jscfr' ), true ),
+                                'jscfr-cpt-show-in-rest'       => array( 'show_in_rest', __( 'Show in REST API', 'jscfr' ), __( 'Expose this post type via the REST API (required for Gutenberg).', 'jscfr' ), true ),
+                            );
+                            foreach ( $vis_toggles as $id => $cfg ) :
+                                list( $key, $label, $desc, $default_on ) = $cfg;
+                                ?>
+                                <div class="jscfr-mb-row jscfr-mb-row-toggle">
+                                    <label><?php echo esc_html( $label ); ?></label>
+                                    <div class="jscfr-mb-control">
+                                        <label class="jscfr-toggle"><input type="checkbox" id="<?php echo esc_attr( $id ); ?>" <?php checked( $bool_checked( $key, $default_on ) ); ?> /><span class="jscfr-toggle-slider"></span></label>
+                                        <span class="jscfr-mb-toggle-desc"><?php echo esc_html( $desc ); ?></span>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+
+                        <div class="jscfr-mb-tab-panel" data-jscfr-panel="advanced">
+                            <div class="jscfr-mb-row">
+                                <label for="jscfr-cpt-rewrite-slug"><?php esc_html_e( 'Rewrite Slug', 'jscfr' ); ?></label>
+                                <div class="jscfr-mb-control">
+                                    <input type="text" id="jscfr-cpt-rewrite-slug" value="<?php echo esc_attr( $val( 'rewrite_slug' ) ); ?>" placeholder="<?php esc_attr_e( 'Leave empty to use slug', 'jscfr' ); ?>" />
+                                    <p class="jscfr-mb-desc"><?php esc_html_e( 'Custom URL slug used when building permalinks. Defaults to the post type slug.', 'jscfr' ); ?></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="jscfr-mb-footer">
+                        <button type="submit" class="button button-primary button-large"><?php echo esc_html( $is_edit ? __( 'Save Changes', 'jscfr' ) : __( 'Create Post Type', 'jscfr' ) ); ?></button>
+                        <a href="<?php echo $list_url; ?>" class="button button-large"><?php esc_html_e( 'Cancel', 'jscfr' ); ?></a>
+                    </div>
+                </form>
             </div>
             <?php
         }
@@ -414,11 +597,33 @@ if ( ! class_exists( 'JSCFR_CPT' ) ) {
             if ( ! current_user_can( 'manage_options' ) ) {
                 wp_die( esc_html__( 'Unauthorized', 'jscfr' ) );
             }
+            $action = isset( $_GET['action'] ) ? sanitize_key( wp_unslash( $_GET['action'] ) ) : '';
+            if ( 'new' === $action ) {
+                $this->render_tax_form_page( array(), '' );
+                return;
+            }
+            if ( 'edit' === $action ) {
+                $slug   = isset( $_GET['slug'] ) ? sanitize_key( wp_unslash( $_GET['slug'] ) ) : '';
+                $taxes  = get_option( self::OPT_TAXES, array() );
+                $config = array();
+                if ( is_array( $taxes ) ) {
+                    foreach ( $taxes as $t ) {
+                        if ( is_array( $t ) && isset( $t['slug'] ) && $t['slug'] === $slug ) {
+                            $config = $t;
+                            break;
+                        }
+                    }
+                }
+                $this->render_tax_form_page( $config, $slug );
+                return;
+            }
+
             $taxes = get_option( self::OPT_TAXES, array() );
             if ( ! is_array( $taxes ) ) $taxes = array();
+            $add_url = esc_url( add_query_arg( array( 'page' => 'jscfr-taxonomies', 'action' => 'new' ), admin_url( 'admin.php' ) ) );
             ?>
             <div class="wrap jscfr-cpt-wrap">
-                <h1><?php esc_html_e( 'Custom Taxonomies', 'jscfr' ); ?> <button type="button" class="page-title-action" id="jscfr-add-tax"><?php esc_html_e( 'Add New', 'jscfr' ); ?></button></h1>
+                <h1><?php esc_html_e( 'Custom Taxonomies', 'jscfr' ); ?> <a href="<?php echo $add_url; ?>" class="page-title-action"><?php esc_html_e( 'Add New', 'jscfr' ); ?></a></h1>
 
                 <table class="wp-list-table widefat fixed striped" id="jscfr-tax-list">
                     <thead>
@@ -435,87 +640,173 @@ if ( ! class_exists( 'JSCFR_CPT' ) ) {
                         <?php if ( empty( $taxes ) ) : ?>
                             <tr class="jscfr-no-items"><td colspan="6"><?php esc_html_e( 'No custom taxonomies registered yet.', 'jscfr' ); ?></td></tr>
                         <?php else : ?>
-                            <?php foreach ( $taxes as $tax ) : ?>
+                            <?php foreach ( $taxes as $tax ) :
+                                $edit_url = esc_url( add_query_arg( array( 'page' => 'jscfr-taxonomies', 'action' => 'edit', 'slug' => $tax['slug'] ), admin_url( 'admin.php' ) ) );
+                                ?>
                                 <tr data-slug="<?php echo esc_attr( $tax['slug'] ); ?>">
-                                    <td><strong><?php echo esc_html( $tax['slug'] ); ?></strong></td>
+                                    <td class="jscfr-col-slug"><a href="<?php echo $edit_url; ?>" class="jscfr-slug-link"><?php echo esc_html( $tax['slug'] ); ?></a></td>
                                     <td><?php echo esc_html( $tax['singular'] ); ?></td>
                                     <td><?php echo esc_html( $tax['plural'] ); ?></td>
-                                    <td><?php echo esc_html( ! empty( $tax['post_types'] ) ? implode( ', ', $tax['post_types'] ) : '—' ); ?></td>
-                                    <td><?php echo ! empty( $tax['hierarchical'] ) ? '&#10003;' : '&mdash;'; ?></td>
                                     <td>
-                                        <button type="button" class="button button-small jscfr-edit-tax"><?php esc_html_e( 'Edit', 'jscfr' ); ?></button>
-                                        <button type="button" class="button button-small button-link-delete jscfr-delete-tax"><?php esc_html_e( 'Delete', 'jscfr' ); ?></button>
+                                        <?php if ( ! empty( $tax['post_types'] ) ) : ?>
+                                            <?php foreach ( (array) $tax['post_types'] as $pt ) : ?>
+                                                <span class="jscfr-pill"><?php echo esc_html( $pt ); ?></span>
+                                            <?php endforeach; ?>
+                                        <?php else : ?>
+                                            <span class="jscfr-muted">—</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <?php if ( ! empty( $tax['hierarchical'] ) ) : ?>
+                                            <span class="jscfr-badge jscfr-badge-yes"><?php esc_html_e( 'Yes', 'jscfr' ); ?></span>
+                                        <?php else : ?>
+                                            <span class="jscfr-badge jscfr-badge-no"><?php esc_html_e( 'No', 'jscfr' ); ?></span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="jscfr-col-actions">
+                                        <a href="<?php echo $edit_url; ?>" class="button jscfr-btn-ghost"><?php esc_html_e( 'Edit', 'jscfr' ); ?></a>
+                                        <button type="button" class="button jscfr-btn-ghost jscfr-btn-danger jscfr-delete-tax"><?php esc_html_e( 'Delete', 'jscfr' ); ?></button>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
                         <?php endif; ?>
                     </tbody>
                 </table>
-
-                <?php $this->render_tax_form(); ?>
             </div>
             <?php
         }
 
-        private function render_tax_form() {
-            $all_pts = get_post_types( array( 'show_ui' => true ), 'objects' );
+        private function render_tax_form_page( $tax = array(), $slug = '' ) {
+            $all_pts    = get_post_types( array( 'show_ui' => true ), 'objects' );
+            $is_edit    = ! empty( $slug );
+            $list_url   = esc_url( add_query_arg( array( 'page' => 'jscfr-taxonomies' ), admin_url( 'admin.php' ) ) );
+            $title      = $is_edit
+                ? sprintf( __( 'Edit Taxonomy: %s', 'jscfr' ), $slug )
+                : __( 'Add New Taxonomy', 'jscfr' );
+
+            $val = function( $key, $default = '' ) use ( $tax ) {
+                return isset( $tax[ $key ] ) ? $tax[ $key ] : $default;
+            };
+            $bool_checked = function( $key, $default_on = true ) use ( $tax ) {
+                if ( ! array_key_exists( $key, $tax ) ) {
+                    return $default_on;
+                }
+                return ! empty( $tax[ $key ] );
+            };
+
+            $selected_pts = is_array( $val( 'post_types', array() ) ) ? $val( 'post_types', array() ) : array();
             ?>
-            <div id="jscfr-tax-form-modal" class="jscfr-modal" style="display:none;">
-                <div class="jscfr-modal-content">
-                    <h2 id="jscfr-tax-form-title"><?php esc_html_e( 'Add Custom Taxonomy', 'jscfr' ); ?></h2>
-                    <form id="jscfr-tax-form">
-                        <input type="hidden" id="jscfr-tax-editing" value="" />
-                        <table class="form-table">
-                            <tr>
-                                <th><label for="jscfr-tax-slug"><?php esc_html_e( 'Slug (key)', 'jscfr' ); ?></label></th>
-                                <td><input type="text" id="jscfr-tax-slug" class="regular-text" maxlength="32" pattern="[a-z0-9_-]+" required /> <p class="description"><?php esc_html_e( 'Lowercase, no spaces. Max 32 chars.', 'jscfr' ); ?></p></td>
-                            </tr>
-                            <tr>
-                                <th><label for="jscfr-tax-singular"><?php esc_html_e( 'Singular Name', 'jscfr' ); ?></label></th>
-                                <td><input type="text" id="jscfr-tax-singular" class="regular-text" required /></td>
-                            </tr>
-                            <tr>
-                                <th><label for="jscfr-tax-plural"><?php esc_html_e( 'Plural Name', 'jscfr' ); ?></label></th>
-                                <td><input type="text" id="jscfr-tax-plural" class="regular-text" required /></td>
-                            </tr>
-                            <tr>
-                                <th><?php esc_html_e( 'Post Types', 'jscfr' ); ?></th>
-                                <td>
-                                    <?php foreach ( $all_pts as $pt ) : ?>
-                                        <label style="display:inline-block;margin-right:14px;"><input type="checkbox" class="jscfr-tax-pt" value="<?php echo esc_attr( $pt->name ); ?>" /> <?php echo esc_html( $pt->labels->singular_name ); ?></label>
-                                    <?php endforeach; ?>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><?php esc_html_e( 'Visibility', 'jscfr' ); ?></th>
-                                <td>
-                                    <label><input type="checkbox" id="jscfr-tax-public" checked /> <?php esc_html_e( 'Public', 'jscfr' ); ?></label><br />
-                                    <label><input type="checkbox" id="jscfr-tax-publicly-queryable" checked /> <?php esc_html_e( 'Publicly Queryable', 'jscfr' ); ?></label><br />
-                                    <label><input type="checkbox" id="jscfr-tax-show-ui" checked /> <?php esc_html_e( 'Show UI', 'jscfr' ); ?></label><br />
-                                    <label><input type="checkbox" id="jscfr-tax-show-in-menu" checked /> <?php esc_html_e( 'Show in Menu', 'jscfr' ); ?></label><br />
-                                    <label><input type="checkbox" id="jscfr-tax-show-in-nav" checked /> <?php esc_html_e( 'Show in Nav Menus', 'jscfr' ); ?></label><br />
-                                    <label><input type="checkbox" id="jscfr-tax-show-in-rest" checked /> <?php esc_html_e( 'Show in REST API', 'jscfr' ); ?></label><br />
-                                    <label><input type="checkbox" id="jscfr-tax-show-admin-column" checked /> <?php esc_html_e( 'Show Admin Column', 'jscfr' ); ?></label><br />
-                                    <label><input type="checkbox" id="jscfr-tax-show-tagcloud" /> <?php esc_html_e( 'Show Tag Cloud', 'jscfr' ); ?></label>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><?php esc_html_e( 'Options', 'jscfr' ); ?></th>
-                                <td>
-                                    <label><input type="checkbox" id="jscfr-tax-hierarchical" checked /> <?php esc_html_e( 'Hierarchical (like Categories)', 'jscfr' ); ?></label>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th><label for="jscfr-tax-rewrite-slug"><?php esc_html_e( 'Rewrite Slug', 'jscfr' ); ?></label></th>
-                                <td><input type="text" id="jscfr-tax-rewrite-slug" class="regular-text" placeholder="<?php esc_attr_e( 'Leave empty to use slug', 'jscfr' ); ?>" /></td>
-                            </tr>
-                        </table>
-                        <p class="submit">
-                            <button type="submit" class="button button-primary"><?php esc_html_e( 'Save Taxonomy', 'jscfr' ); ?></button>
-                            <button type="button" class="button jscfr-modal-cancel"><?php esc_html_e( 'Cancel', 'jscfr' ); ?></button>
-                        </p>
-                    </form>
+            <div class="wrap jscfr-cpt-wrap jscfr-mb-page">
+                <div class="jscfr-mb-page-header">
+                    <h1 class="wp-heading-inline"><?php echo esc_html( $title ); ?></h1>
+                    <a href="<?php echo $list_url; ?>" class="page-title-action"><?php esc_html_e( '← Back to Taxonomies', 'jscfr' ); ?></a>
                 </div>
+                <hr class="wp-header-end" />
+
+                <form id="jscfr-tax-form" class="jscfr-mb-style">
+                    <input type="hidden" id="jscfr-tax-editing" value="<?php echo esc_attr( $slug ); ?>" />
+
+                    <div class="jscfr-mb-tabs">
+                        <ul class="jscfr-mb-tab-nav" role="tablist">
+                            <li class="active" data-jscfr-tab="general"><?php esc_html_e( 'General', 'jscfr' ); ?></li>
+                            <li data-jscfr-tab="visibility"><?php esc_html_e( 'Visibility', 'jscfr' ); ?></li>
+                            <li data-jscfr-tab="advanced"><?php esc_html_e( 'Advanced', 'jscfr' ); ?></li>
+                        </ul>
+
+                        <div class="jscfr-mb-tab-panel active" data-jscfr-panel="general">
+                            <div class="jscfr-mb-row">
+                                <label for="jscfr-tax-plural"><?php esc_html_e( 'Plural name', 'jscfr' ); ?><span class="jscfr-mb-req">*</span></label>
+                                <div class="jscfr-mb-control"><input type="text" id="jscfr-tax-plural" value="<?php echo esc_attr( $val( 'plural' ) ); ?>" required /></div>
+                            </div>
+                            <div class="jscfr-mb-row">
+                                <label for="jscfr-tax-singular"><?php esc_html_e( 'Singular name', 'jscfr' ); ?><span class="jscfr-mb-req">*</span></label>
+                                <div class="jscfr-mb-control"><input type="text" id="jscfr-tax-singular" value="<?php echo esc_attr( $val( 'singular' ) ); ?>" required /></div>
+                            </div>
+                            <div class="jscfr-mb-row">
+                                <label for="jscfr-tax-slug"><?php esc_html_e( 'Slug', 'jscfr' ); ?><span class="jscfr-mb-req">*</span></label>
+                                <div class="jscfr-mb-control">
+                                    <input type="text" id="jscfr-tax-slug" value="<?php echo esc_attr( $slug ); ?>" maxlength="32" pattern="[a-z0-9_-]+" required <?php echo $is_edit ? 'readonly' : ''; ?> />
+                                    <p class="jscfr-mb-desc"><?php esc_html_e( 'Lowercase, no spaces. Max 32 chars.', 'jscfr' ); ?></p>
+                                </div>
+                            </div>
+                            <div class="jscfr-mb-row jscfr-mb-row-toggle">
+                                <label><?php esc_html_e( 'Public', 'jscfr' ); ?></label>
+                                <div class="jscfr-mb-control">
+                                    <label class="jscfr-toggle">
+                                        <input type="checkbox" id="jscfr-tax-public" <?php checked( $bool_checked( 'public', true ) ); ?> />
+                                        <span class="jscfr-toggle-slider"></span>
+                                    </label>
+                                    <span class="jscfr-mb-toggle-desc"><?php esc_html_e( 'Whether a taxonomy is intended for use publicly either via the admin interface or by front-end users.', 'jscfr' ); ?></span>
+                                </div>
+                            </div>
+                            <div class="jscfr-mb-row jscfr-mb-row-toggle">
+                                <label><?php esc_html_e( 'Hierarchical', 'jscfr' ); ?></label>
+                                <div class="jscfr-mb-control">
+                                    <label class="jscfr-toggle">
+                                        <input type="checkbox" id="jscfr-tax-hierarchical" <?php checked( $bool_checked( 'hierarchical', true ) ); ?> />
+                                        <span class="jscfr-toggle-slider"></span>
+                                    </label>
+                                    <span class="jscfr-mb-toggle-desc"><?php esc_html_e( 'Whether the taxonomy is hierarchical (e.g. like category).', 'jscfr' ); ?></span>
+                                </div>
+                            </div>
+                            <div class="jscfr-mb-row">
+                                <label><?php esc_html_e( 'Associated post types', 'jscfr' ); ?></label>
+                                <div class="jscfr-mb-control">
+                                    <div class="jscfr-mb-chips">
+                                        <?php foreach ( $all_pts as $pt ) : ?>
+                                            <label class="jscfr-mb-chip">
+                                                <input type="checkbox" class="jscfr-tax-pt" value="<?php echo esc_attr( $pt->name ); ?>" <?php checked( in_array( $pt->name, $selected_pts, true ) ); ?> />
+                                                <span><?php echo esc_html( $pt->labels->singular_name ); ?></span>
+                                            </label>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="jscfr-mb-tab-panel" data-jscfr-panel="visibility">
+                            <?php
+                            $vis_toggles = array(
+                                'jscfr-tax-publicly-queryable' => array( 'publicly_queryable', __( 'Publicly Queryable', 'jscfr' ), __( 'Whether the taxonomy is publicly queryable.', 'jscfr' ), true ),
+                                'jscfr-tax-show-ui'            => array( 'show_ui', __( 'Show UI', 'jscfr' ), __( 'Show a default UI for managing this taxonomy in the admin.', 'jscfr' ), true ),
+                                'jscfr-tax-show-in-menu'       => array( 'show_in_menu', __( 'Show in Menu', 'jscfr' ), __( 'Show the taxonomy in the admin menu.', 'jscfr' ), true ),
+                                'jscfr-tax-show-in-nav'        => array( 'show_in_nav_menus', __( 'Show in Nav Menus', 'jscfr' ), __( 'Make this taxonomy available for selection in navigation menus.', 'jscfr' ), true ),
+                                'jscfr-tax-show-in-rest'       => array( 'show_in_rest', __( 'Show in REST API', 'jscfr' ), __( 'Expose this taxonomy in the REST API (required for Gutenberg).', 'jscfr' ), true ),
+                                'jscfr-tax-show-admin-column'  => array( 'show_admin_column', __( 'Show Admin Column', 'jscfr' ), __( 'Display a column for the taxonomy on associated post type list tables.', 'jscfr' ), true ),
+                                'jscfr-tax-show-tagcloud'      => array( 'show_tagcloud', __( 'Show Tag Cloud', 'jscfr' ), __( 'Include this taxonomy in the Tag Cloud widget controls.', 'jscfr' ), false ),
+                            );
+                            foreach ( $vis_toggles as $id => $cfg ) :
+                                list( $key, $label, $desc, $default_on ) = $cfg;
+                                ?>
+                                <div class="jscfr-mb-row jscfr-mb-row-toggle">
+                                    <label><?php echo esc_html( $label ); ?></label>
+                                    <div class="jscfr-mb-control">
+                                        <label class="jscfr-toggle">
+                                            <input type="checkbox" id="<?php echo esc_attr( $id ); ?>" <?php checked( $bool_checked( $key, $default_on ) ); ?> />
+                                            <span class="jscfr-toggle-slider"></span>
+                                        </label>
+                                        <span class="jscfr-mb-toggle-desc"><?php echo esc_html( $desc ); ?></span>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+
+                        <div class="jscfr-mb-tab-panel" data-jscfr-panel="advanced">
+                            <div class="jscfr-mb-row">
+                                <label for="jscfr-tax-rewrite-slug"><?php esc_html_e( 'Rewrite Slug', 'jscfr' ); ?></label>
+                                <div class="jscfr-mb-control">
+                                    <input type="text" id="jscfr-tax-rewrite-slug" value="<?php echo esc_attr( $val( 'rewrite_slug' ) ); ?>" placeholder="<?php esc_attr_e( 'Leave empty to use slug', 'jscfr' ); ?>" />
+                                    <p class="jscfr-mb-desc"><?php esc_html_e( 'Custom URL slug for taxonomy archives. Defaults to the taxonomy slug.', 'jscfr' ); ?></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="jscfr-mb-footer">
+                        <button type="submit" class="button button-primary button-large"><?php echo esc_html( $is_edit ? __( 'Save Changes', 'jscfr' ) : __( 'Create Taxonomy', 'jscfr' ) ); ?></button>
+                        <a href="<?php echo $list_url; ?>" class="button button-large"><?php esc_html_e( 'Cancel', 'jscfr' ); ?></a>
+                    </div>
+                </form>
             </div>
             <?php
         }

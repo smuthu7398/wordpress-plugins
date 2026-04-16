@@ -1,6 +1,7 @@
 <?php
 /**
- * Plugin Name: Odg Custom Fields Repeater
+ * Plugin Name: CF Builder
+ * Update URI: false
  * Description: Build custom fields for posts, pages, users, taxonomies, comments, and options screens.
  * Version:     5.5.0
  * License:     GPL-2.0-or-later
