@@ -42,7 +42,8 @@
 .jscfr-cpt-wrap #jscfr-cpt-list,
 .jscfr-cpt-wrap #jscfr-tax-list,
 .jscfr-cpt-wrap #jscfr-rel-list,
-.jscfr-cpt-wrap #jscfr-opt-pages-table {
+.jscfr-cpt-wrap #jscfr-opt-pages-table,
+.jscfr-cpt-wrap #jscfr-json-sync-list {
     margin-top: 0;
     border: 1px solid #e0e0e3;
     border-radius: 8px;
@@ -55,7 +56,9 @@
 .jscfr-cpt-wrap #jscfr-cpt-list thead th,
 .jscfr-cpt-wrap #jscfr-tax-list thead th,
 .jscfr-cpt-wrap #jscfr-rel-list thead th,
-.jscfr-cpt-wrap #jscfr-opt-pages-table thead th {
+.jscfr-cpt-wrap #jscfr-opt-pages-table thead th,
+.jscfr-cpt-wrap #jscfr-json-sync-list thead th,
+.jscfr-cpt-wrap #jscfr-json-sync-list thead td {
     background: #fafafa;
     border-bottom: 1px solid #e0e0e3;
     padding: 14px 18px;
@@ -68,7 +71,9 @@
 .jscfr-cpt-wrap #jscfr-cpt-list tbody td,
 .jscfr-cpt-wrap #jscfr-tax-list tbody td,
 .jscfr-cpt-wrap #jscfr-rel-list tbody td,
-.jscfr-cpt-wrap #jscfr-opt-pages-table tbody td {
+.jscfr-cpt-wrap #jscfr-opt-pages-table tbody td,
+.jscfr-cpt-wrap #jscfr-json-sync-list tbody td,
+.jscfr-cpt-wrap #jscfr-json-sync-list tbody th {
     padding: 16px 18px;
     border-top: 1px solid #f0f0f1;
     vertical-align: middle;
@@ -79,11 +84,15 @@
 .jscfr-cpt-wrap #jscfr-cpt-list tbody tr:first-child td,
 .jscfr-cpt-wrap #jscfr-tax-list tbody tr:first-child td,
 .jscfr-cpt-wrap #jscfr-rel-list tbody tr:first-child td,
-.jscfr-cpt-wrap #jscfr-opt-pages-table tbody tr:first-child td { border-top: 0; }
+.jscfr-cpt-wrap #jscfr-opt-pages-table tbody tr:first-child td,
+.jscfr-cpt-wrap #jscfr-json-sync-list tbody tr:first-child td,
+.jscfr-cpt-wrap #jscfr-json-sync-list tbody tr:first-child th { border-top: 0; }
 .jscfr-cpt-wrap #jscfr-cpt-list tbody tr:hover td,
 .jscfr-cpt-wrap #jscfr-tax-list tbody tr:hover td,
 .jscfr-cpt-wrap #jscfr-rel-list tbody tr:hover td,
-.jscfr-cpt-wrap #jscfr-opt-pages-table tbody tr:hover td { background: #f7fafd; }
+.jscfr-cpt-wrap #jscfr-opt-pages-table tbody tr:hover td,
+.jscfr-cpt-wrap #jscfr-json-sync-list tbody tr:hover td,
+.jscfr-cpt-wrap #jscfr-json-sync-list tbody tr:hover th { background: #f7fafd; }
 
 .jscfr-cpt-wrap .jscfr-no-items td {
     color: #646970;
@@ -697,3 +706,70 @@ form.jscfr-mb-style { margin-top: 0; }
 }
 .jscfr-opt-status.is-success { color: #008a20; }
 .jscfr-opt-status.is-error   { color: #b32d2e; }
+
+/* ============================================================
+   JSON Sync
+   ============================================================ */
+.jscfr-json-sync-intro {
+    margin: 0 0 18px;
+    color: #50575e;
+    font-size: 13px;
+}
+.jscfr-json-sync-intro code {
+    background: #f0f0f1;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+.jscfr-json-sync-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 16px;
+    padding: 12px 14px;
+    background: #fff;
+    border: 1px solid #e0e0e3;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+.jscfr-json-sync-toolbar .jscfr-json-sync-bulk-select {
+    min-width: 180px;
+    padding: 6px 10px;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    background: #fff;
+    font-size: 13px;
+}
+.jscfr-json-sync-toolbar .spinner { margin: 0; }
+
+.jscfr-json-sync-loading {
+    text-align: center;
+    padding: 28px 16px !important;
+    color: #646970;
+    font-size: 13px;
+}
+.jscfr-json-sync-loading .spinner {
+    float: none;
+    vertical-align: middle;
+    margin: 0 8px 0 0;
+}
+
+.jscfr-cpt-wrap #jscfr-json-sync-list .jscfr-json-sync-id {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 11px;
+    color: #646970;
+    background: transparent;
+    padding: 0;
+}
+
+.jscfr-badge.jscfr-badge-sync-in_sync    { background: #eaf5ea; color: #1f7a1f; border: 1px solid #cfe7cf; }
+.jscfr-badge.jscfr-badge-sync-db_only    { background: #e6f1fb; color: #125684; border: 1px solid #c5def4; }
+.jscfr-badge.jscfr-badge-sync-json_only  { background: #efe9f7; color: #5b3d8f; border: 1px solid #d7c8ec; }
+.jscfr-badge.jscfr-badge-sync-db_newer   { background: #fff4d6; color: #8a5c00; border: 1px solid #f6d775; }
+.jscfr-badge.jscfr-badge-sync-json_newer { background: #e2f5fa; color: #0b5a73; border: 1px solid #b7e2ee; }
+
+.jscfr-json-sync-message .notice {
+    margin: 12px 0 0;
+    border-radius: 6px;
+}

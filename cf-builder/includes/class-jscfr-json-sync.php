@@ -287,100 +287,58 @@ if ( ! class_exists( 'JSCFR_JSON_Sync' ) ) {
             if ( ! current_user_can( 'manage_options' ) ) {
                 wp_die( esc_html__( 'Unauthorized', 'jscfr' ) );
             }
+            wp_enqueue_style( 'jscfr-cpt-css', JSCFR_PLUGIN_URL . 'assets/css/jscfr-cpt.css', array(), JSCFR_VERSION );
+            $json_rel = trailingslashit( basename( get_stylesheet_directory() ) ) . 'jscfr-json/';
             ?>
-            <div class="wrap jscfr-json-sync-wrap">
-                <h1><?php esc_html_e( 'JSON Sync', 'jscfr' ); ?></h1>
-                <p class="description">
+            <div class="wrap jscfr-cpt-wrap jscfr-json-sync-wrap">
+                <h1 class="wp-heading-inline"><?php esc_html_e( 'JSON Sync', 'jscfr' ); ?></h1>
+                <hr class="wp-header-end" />
+                <p class="jscfr-json-sync-intro">
                     <?php esc_html_e( 'Sync field groups between the database and JSON files in your active theme directory. JSON files are stored in', 'jscfr' ); ?>
-                    <code><?php echo esc_html( trailingslashit( basename( get_stylesheet_directory() ) ) . 'jscfr-json/' ); ?></code>
+                    <code><?php echo esc_html( $json_rel ); ?></code>
                 </p>
-                <hr class="wp-header-end">
 
-                <!-- Bulk Actions -->
-                <div class="jscfr-json-sync-actions" style="margin:15px 0;">
+                <div class="jscfr-json-sync-toolbar">
                     <select id="jscfr-json-sync-bulk-action" class="jscfr-json-sync-bulk-select">
                         <option value=""><?php esc_html_e( 'Bulk Actions', 'jscfr' ); ?></option>
                         <option value="export"><?php esc_html_e( 'Export to JSON', 'jscfr' ); ?></option>
                         <option value="import"><?php esc_html_e( 'Import from JSON', 'jscfr' ); ?></option>
                         <option value="delete"><?php esc_html_e( 'Delete JSON', 'jscfr' ); ?></option>
                     </select>
-                    <button type="button" class="button jscfr-json-sync-apply-btn" id="jscfr-json-sync-apply">
+                    <button type="button" class="button button-primary" id="jscfr-json-sync-apply">
                         <?php esc_html_e( 'Apply', 'jscfr' ); ?>
+                    </button>
+                    <button type="button" class="button jscfr-btn-ghost" id="jscfr-json-sync-refresh">
+                        <?php esc_html_e( 'Refresh', 'jscfr' ); ?>
                     </button>
                     <span class="spinner jscfr-json-sync-spinner" id="jscfr-json-sync-spinner"></span>
                 </div>
 
-                <!-- Status Table -->
-                <table class="wp-list-table widefat fixed striped jscfr-json-sync-table">
+                <table class="wp-list-table widefat fixed striped" id="jscfr-json-sync-list">
                     <thead>
                         <tr>
-                            <td class="manage-column column-cb check-column" style="width:30px;">
+                            <td class="manage-column column-cb check-column" style="width:36px;">
                                 <input type="checkbox" id="jscfr-json-sync-select-all" />
                             </td>
-                            <th class="manage-column jscfr-json-sync-col-title"><?php esc_html_e( 'Title', 'jscfr' ); ?></th>
-                            <th class="manage-column jscfr-json-sync-col-status" style="width:130px;"><?php esc_html_e( 'Status', 'jscfr' ); ?></th>
-                            <th class="manage-column jscfr-json-sync-col-db-mod" style="width:170px;"><?php esc_html_e( 'DB Modified', 'jscfr' ); ?></th>
-                            <th class="manage-column jscfr-json-sync-col-json-mod" style="width:170px;"><?php esc_html_e( 'JSON Modified', 'jscfr' ); ?></th>
-                            <th class="manage-column jscfr-json-sync-col-actions" style="width:200px;"><?php esc_html_e( 'Actions', 'jscfr' ); ?></th>
+                            <th><?php esc_html_e( 'Title', 'jscfr' ); ?></th>
+                            <th style="width:140px;"><?php esc_html_e( 'Status', 'jscfr' ); ?></th>
+                            <th style="width:180px;"><?php esc_html_e( 'DB Modified', 'jscfr' ); ?></th>
+                            <th style="width:180px;"><?php esc_html_e( 'JSON Modified', 'jscfr' ); ?></th>
+                            <th style="width:260px;"><?php esc_html_e( 'Actions', 'jscfr' ); ?></th>
                         </tr>
                     </thead>
                     <tbody id="jscfr-json-sync-tbody">
                         <tr>
-                            <td colspan="6" style="text-align:center;padding:20px;">
-                                <span class="spinner is-active" style="float:none;"></span>
-                                <?php esc_html_e( 'Loading sync status...', 'jscfr' ); ?>
+                            <td colspan="6" class="jscfr-json-sync-loading">
+                                <span class="spinner is-active"></span>
+                                <?php esc_html_e( 'Loading sync status…', 'jscfr' ); ?>
                             </td>
                         </tr>
                     </tbody>
-                    <tfoot>
-                        <tr>
-                            <td class="manage-column column-cb check-column">
-                                <input type="checkbox" class="jscfr-json-sync-select-all-foot" />
-                            </td>
-                            <th class="manage-column"><?php esc_html_e( 'Title', 'jscfr' ); ?></th>
-                            <th class="manage-column"><?php esc_html_e( 'Status', 'jscfr' ); ?></th>
-                            <th class="manage-column"><?php esc_html_e( 'DB Modified', 'jscfr' ); ?></th>
-                            <th class="manage-column"><?php esc_html_e( 'JSON Modified', 'jscfr' ); ?></th>
-                            <th class="manage-column"><?php esc_html_e( 'Actions', 'jscfr' ); ?></th>
-                        </tr>
-                    </tfoot>
                 </table>
 
-                <!-- Status message area -->
-                <div id="jscfr-json-sync-message" class="jscfr-json-sync-message" style="margin-top:10px;"></div>
+                <div id="jscfr-json-sync-message" class="jscfr-json-sync-message"></div>
             </div>
-
-            <style>
-                .jscfr-json-sync-wrap .jscfr-json-sync-table { margin-top: 5px; }
-                .jscfr-json-sync-badge {
-                    display: inline-block;
-                    padding: 3px 8px;
-                    border-radius: 3px;
-                    font-size: 12px;
-                    font-weight: 600;
-                    line-height: 1.4;
-                    color: #fff;
-                }
-                .jscfr-json-sync-badge-db_only     { background: #0073aa; }
-                .jscfr-json-sync-badge-json_only    { background: #826eb4; }
-                .jscfr-json-sync-badge-in_sync      { background: #46b450; }
-                .jscfr-json-sync-badge-db_newer     { background: #ffb900; color: #23282d; }
-                .jscfr-json-sync-badge-json_newer    { background: #00a0d2; }
-
-                .jscfr-json-sync-row-actions a {
-                    cursor: pointer;
-                    margin-right: 8px;
-                }
-                .jscfr-json-sync-row-actions a.jscfr-json-sync-action-delete {
-                    color: #a00;
-                }
-                .jscfr-json-sync-row-actions a.jscfr-json-sync-action-delete:hover {
-                    color: #dc3232;
-                }
-                .jscfr-json-sync-message .notice {
-                    margin: 5px 0;
-                }
-            </style>
 
             <script type="text/javascript">
             (function($){
@@ -406,27 +364,27 @@ if ( ! class_exists( 'JSCFR_JSON_Sync' ) ) {
                     var s = item.status;
 
                     if (s === 'db_only' || s === 'db_newer' || s === 'in_sync') {
-                        actions.push('<a class="jscfr-json-sync-action-export" data-fg="' + item.fg_id + '"><?php echo esc_js( __( 'Export', 'jscfr' ) ); ?></a>');
+                        actions.push('<button type="button" class="button jscfr-btn-ghost jscfr-json-sync-action-export" data-fg="' + item.fg_id + '"><?php echo esc_js( __( 'Export', 'jscfr' ) ); ?></button>');
                     }
                     if (s === 'json_only' || s === 'json_newer' || s === 'in_sync') {
-                        actions.push('<a class="jscfr-json-sync-action-import" data-fg="' + item.fg_id + '"><?php echo esc_js( __( 'Import', 'jscfr' ) ); ?></a>');
+                        actions.push('<button type="button" class="button jscfr-btn-ghost jscfr-json-sync-action-import" data-fg="' + item.fg_id + '"><?php echo esc_js( __( 'Import', 'jscfr' ) ); ?></button>');
                     }
                     if (s !== 'db_only') {
-                        actions.push('<a class="jscfr-json-sync-action-delete" data-fg="' + item.fg_id + '"><?php echo esc_js( __( 'Delete JSON', 'jscfr' ) ); ?></a>');
+                        actions.push('<button type="button" class="button jscfr-btn-ghost jscfr-btn-danger jscfr-json-sync-action-delete" data-fg="' + item.fg_id + '"><?php echo esc_js( __( 'Delete', 'jscfr' ) ); ?></button>');
                     }
-                    return actions.join(' | ');
+                    return actions.join(' ');
                 }
 
                 function loadStatus() {
                     var $tbody = $('#jscfr-json-sync-tbody');
-                    $tbody.html('<tr><td colspan="6" style="text-align:center;padding:20px;"><span class="spinner is-active" style="float:none;"></span> <?php echo esc_js( __( 'Loading...', 'jscfr' ) ); ?></td></tr>');
+                    $tbody.html('<tr><td colspan="6" class="jscfr-json-sync-loading"><span class="spinner is-active"></span> <?php echo esc_js( __( 'Loading…', 'jscfr' ) ); ?></td></tr>');
 
                     $.post(ajaxUrl, {
                         action: 'jscfr_json_sync_status',
                         nonce: nonce
                     }, function(res) {
                         if (!res.success || !res.data.length) {
-                            $tbody.html('<tr><td colspan="6" style="text-align:center;padding:20px;"><?php echo esc_js( __( 'No field groups found.', 'jscfr' ) ); ?></td></tr>');
+                            $tbody.html('<tr class="jscfr-no-items"><td colspan="6"><?php echo esc_js( __( 'No field groups found.', 'jscfr' ) ); ?></td></tr>');
                             return;
                         }
 
@@ -434,11 +392,11 @@ if ( ! class_exists( 'JSCFR_JSON_Sync' ) ) {
                         $.each(res.data, function(i, item) {
                             html += '<tr data-fg="' + item.fg_id + '">';
                             html += '<th scope="row" class="check-column"><input type="checkbox" class="jscfr-json-sync-cb" value="' + item.fg_id + '" /></th>';
-                            html += '<td><strong>' + $('<span>').text(item.title).html() + '</strong><br><code style="font-size:11px;">' + $('<span>').text(item.fg_id).html() + '</code></td>';
-                            html += '<td><span class="jscfr-json-sync-badge jscfr-json-sync-badge-' + item.status + '">' + (statusLabels[item.status] || item.status) + '</span></td>';
+                            html += '<td class="jscfr-col-slug"><span class="jscfr-slug-link">' + $('<span>').text(item.title).html() + '</span><br><code class="jscfr-json-sync-id">' + $('<span>').text(item.fg_id).html() + '</code></td>';
+                            html += '<td><span class="jscfr-badge jscfr-badge-sync-' + item.status + '">' + (statusLabels[item.status] || item.status) + '</span></td>';
                             html += '<td>' + formatDate(item.db_modified) + '</td>';
                             html += '<td>' + formatDate(item.json_modified) + '</td>';
-                            html += '<td class="jscfr-json-sync-row-actions">' + getRowActions(item) + '</td>';
+                            html += '<td class="jscfr-col-actions">' + getRowActions(item) + '</td>';
                             html += '</tr>';
                         });
                         $tbody.html(html);
@@ -474,12 +432,13 @@ if ( ! class_exists( 'JSCFR_JSON_Sync' ) ) {
                     });
                 }
 
-                // Select-all checkboxes.
-                $(document).on('change', '#jscfr-json-sync-select-all, .jscfr-json-sync-select-all-foot', function() {
-                    var checked = $(this).prop('checked');
-                    $('.jscfr-json-sync-cb').prop('checked', checked);
-                    $('#jscfr-json-sync-select-all, .jscfr-json-sync-select-all-foot').prop('checked', checked);
+                // Select-all checkbox.
+                $(document).on('change', '#jscfr-json-sync-select-all', function() {
+                    $('.jscfr-json-sync-cb').prop('checked', $(this).prop('checked'));
                 });
+
+                // Refresh.
+                $('#jscfr-json-sync-refresh').on('click', function(){ loadStatus(); });
 
                 // Bulk apply.
                 $('#jscfr-json-sync-apply').on('click', function() {
