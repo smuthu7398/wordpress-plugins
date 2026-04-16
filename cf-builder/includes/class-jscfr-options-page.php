@@ -142,7 +142,7 @@ if ( ! class_exists( 'JSCFR_Options_Page' ) ) {
                     <?php endif; ?>
                 </div>
 
-                <div class="jscfr-mb-footer" id="jscfr-opt-footer" style="<?php echo empty( $pages ) ? 'display:none;' : ''; ?>">
+                <div class="jscfr-mb-footer" id="jscfr-opt-footer" data-saved-count="<?php echo count( $pages ); ?>" style="<?php echo empty( $pages ) ? 'display:none;' : ''; ?>">
                     <button type="button" class="button button-primary button-large" id="jscfr-opt-save-pages">
                         <?php esc_html_e( 'Save Pages', 'jscfr' ); ?>
                     </button>
@@ -177,9 +177,12 @@ if ( ! class_exists( 'JSCFR_Options_Page' ) ) {
                 }
 
                 function refreshFooter(){
-                    var has = $manager.find('.jscfr-opt-card').length > 0;
-                    $('#jscfr-opt-footer').toggle( has );
-                    if ( ! has && $manager.find('.jscfr-opt-empty').length === 0 ) {
+                    var $footer = $('#jscfr-opt-footer');
+                    var cards   = $manager.find('.jscfr-opt-card').length;
+                    var savedCount = parseInt( $footer.attr('data-saved-count'), 10 ) || 0;
+                    // Show footer when there are cards, or when the user deleted something and needs to commit the empty state.
+                    $footer.toggle( cards > 0 || cards !== savedCount );
+                    if ( cards === 0 && $manager.find('.jscfr-opt-empty').length === 0 ) {
                         $manager.append('<div class="jscfr-opt-empty"><?php echo esc_js( __( 'No options pages yet. Click "Add New" to create one.', 'jscfr' ) ); ?></div>');
                     }
                 }
@@ -229,6 +232,10 @@ if ( ! class_exists( 'JSCFR_Options_Page' ) ) {
                         $st.text(res.success ? '<?php echo esc_js( __( 'Saved! Refresh to see menu changes.', 'jscfr' ) ); ?>' : '<?php echo esc_js( __( 'Error saving.', 'jscfr' ) ); ?>')
                            .toggleClass('is-success', !!res.success)
                            .toggleClass('is-error', !res.success);
+                        if ( res.success ) {
+                            $('#jscfr-opt-footer').attr('data-saved-count', pages.length);
+                            refreshFooter();
+                        }
                         setTimeout(function(){ $st.text('').removeClass('is-success is-error'); }, 4000);
                     });
                 });
