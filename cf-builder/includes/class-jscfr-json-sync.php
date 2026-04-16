@@ -321,10 +321,10 @@ if ( ! class_exists( 'JSCFR_JSON_Sync' ) ) {
                                 <input type="checkbox" id="jscfr-json-sync-select-all" />
                             </td>
                             <th><?php esc_html_e( 'Title', 'jscfr' ); ?></th>
-                            <th style="width:140px;"><?php esc_html_e( 'Status', 'jscfr' ); ?></th>
-                            <th style="width:180px;"><?php esc_html_e( 'DB Modified', 'jscfr' ); ?></th>
-                            <th style="width:180px;"><?php esc_html_e( 'JSON Modified', 'jscfr' ); ?></th>
-                            <th style="width:260px;"><?php esc_html_e( 'Actions', 'jscfr' ); ?></th>
+                            <th style="width:120px;"><?php esc_html_e( 'Status', 'jscfr' ); ?></th>
+                            <th style="width:160px;"><?php esc_html_e( 'DB Modified', 'jscfr' ); ?></th>
+                            <th style="width:160px;"><?php esc_html_e( 'JSON Modified', 'jscfr' ); ?></th>
+                            <th style="width:220px;"><?php esc_html_e( 'Actions', 'jscfr' ); ?></th>
                         </tr>
                     </thead>
                     <tbody id="jscfr-json-sync-tbody">
@@ -392,11 +392,11 @@ if ( ! class_exists( 'JSCFR_JSON_Sync' ) ) {
                         $.each(res.data, function(i, item) {
                             html += '<tr data-fg="' + item.fg_id + '">';
                             html += '<th scope="row" class="check-column"><input type="checkbox" class="jscfr-json-sync-cb" value="' + item.fg_id + '" /></th>';
-                            html += '<td class="jscfr-col-slug"><span class="jscfr-slug-link">' + $('<span>').text(item.title).html() + '</span><br><code class="jscfr-json-sync-id">' + $('<span>').text(item.fg_id).html() + '</code></td>';
+                            html += '<td class="jscfr-json-sync-title-cell"><div class="jscfr-json-sync-title">' + $('<span>').text(item.title).html() + '</div><code class="jscfr-json-sync-id">' + $('<span>').text(item.fg_id).html() + '</code></td>';
                             html += '<td><span class="jscfr-badge jscfr-badge-sync-' + item.status + '">' + (statusLabels[item.status] || item.status) + '</span></td>';
                             html += '<td>' + formatDate(item.db_modified) + '</td>';
                             html += '<td>' + formatDate(item.json_modified) + '</td>';
-                            html += '<td class="jscfr-col-actions">' + getRowActions(item) + '</td>';
+                            html += '<td class="jscfr-json-sync-actions">' + getRowActions(item) + '</td>';
                             html += '</tr>';
                         });
                         $tbody.html(html);
