@@ -347,80 +347,80 @@ if ( ! class_exists( 'JSCFR_Relationships' ) ) {
 
             $post_types = get_post_types( array( 'public' => true ), 'objects' );
             $taxonomies = get_taxonomies( array( 'public' => true ), 'objects' );
-            $back_url   = admin_url( 'admin.php?page=jscfr-relationships' );
+            $back_url   = esc_url( admin_url( 'admin.php?page=jscfr-relationships' ) );
+            $is_edit    = ( 'new' !== $rel_id );
+            $title      = $is_edit
+                ? __( 'Edit Relationship', 'jscfr' )
+                : __( 'New Relationship', 'jscfr' );
+
+            wp_enqueue_style( 'jscfr-cpt-css', JSCFR_PLUGIN_URL . 'assets/css/jscfr-cpt.css', array(), JSCFR_VERSION );
             ?>
-            <div class="wrap jscfr-builder-wrap jscfr-rel-edit-wrap">
-
-                <div class="jscfr-list-header">
-                    <h1>
-                        <a href="<?php echo esc_url( $back_url ); ?>" class="jscfr-back-link" title="<?php esc_attr_e( 'Back to Relationships', 'jscfr' ); ?>">
-                            <span class="dashicons dashicons-arrow-left-alt2"></span>
-                        </a>
-                        <?php echo ( 'new' === $rel_id ) ? esc_html__( 'New Relationship', 'jscfr' ) : esc_html__( 'Edit Relationship', 'jscfr' ); ?>
-                    </h1>
+            <div class="wrap jscfr-cpt-wrap jscfr-mb-page">
+                <div class="jscfr-mb-page-header">
+                    <h1 class="wp-heading-inline"><?php echo esc_html( $title ); ?></h1>
+                    <a href="<?php echo $back_url; ?>" class="page-title-action"><?php esc_html_e( '← Back to Relationships', 'jscfr' ); ?></a>
                 </div>
+                <hr class="wp-header-end" />
 
-                <form id="jscfr-rel-form" class="jscfr-rel-form" data-rel-id="<?php echo esc_attr( $def['id'] ); ?>">
+                <form id="jscfr-rel-form" class="jscfr-mb-style" data-rel-id="<?php echo esc_attr( $def['id'] ); ?>">
                     <input type="hidden" name="rel_id" value="<?php echo esc_attr( $def['id'] ); ?>" />
 
-                    <!-- Relationship Label -->
-                    <div class="jscfr-rel-section">
-                        <h2><?php esc_html_e( 'General', 'jscfr' ); ?></h2>
-                        <table class="form-table">
-                            <tr>
-                                <th scope="row">
-                                    <label for="jscfr-rel-label"><?php esc_html_e( 'Relationship Label', 'jscfr' ); ?></label>
-                                </th>
-                                <td>
-                                    <input type="text" id="jscfr-rel-label" name="label" class="regular-text"
+                    <div class="jscfr-mb-tabs">
+                        <ul class="jscfr-mb-tab-nav" role="tablist">
+                            <li class="active" data-jscfr-tab="general"><?php esc_html_e( 'General', 'jscfr' ); ?></li>
+                            <li data-jscfr-tab="from"><?php esc_html_e( 'From', 'jscfr' ); ?></li>
+                            <li data-jscfr-tab="to"><?php esc_html_e( 'To', 'jscfr' ); ?></li>
+                        </ul>
+
+                        <div class="jscfr-mb-tab-panel active" data-jscfr-panel="general">
+                            <div class="jscfr-mb-row">
+                                <label for="jscfr-rel-label"><?php esc_html_e( 'Relationship Label', 'jscfr' ); ?><span class="jscfr-mb-req">*</span></label>
+                                <div class="jscfr-mb-control">
+                                    <input type="text" id="jscfr-rel-label" name="label"
                                            value="<?php echo esc_attr( $def['label'] ); ?>"
-                                           placeholder="<?php esc_attr_e( 'e.g. Projects to Investors', 'jscfr' ); ?>" />
-                                </td>
-                            </tr>
-                        </table>
+                                           placeholder="<?php esc_attr_e( 'e.g. Projects to Investors', 'jscfr' ); ?>" required />
+                                    <p class="jscfr-mb-desc"><?php esc_html_e( 'Human-readable name shown throughout the admin.', 'jscfr' ); ?></p>
+                                </div>
+                            </div>
+                            <div class="jscfr-mb-row jscfr-mb-row-toggle">
+                                <label><?php esc_html_e( 'Bidirectional', 'jscfr' ); ?></label>
+                                <div class="jscfr-mb-control">
+                                    <label class="jscfr-toggle">
+                                        <input type="checkbox" name="bidirectional" value="1" <?php checked( ! empty( $def['bidirectional'] ) ); ?> />
+                                        <span class="jscfr-toggle-slider"></span>
+                                    </label>
+                                    <span class="jscfr-mb-toggle-desc"><?php esc_html_e( 'When a connection is created from A to B, automatically create the reverse connection from B to A.', 'jscfr' ); ?></span>
+                                </div>
+                            </div>
+                            <div class="jscfr-mb-row jscfr-mb-row-toggle">
+                                <label><?php esc_html_e( 'Sortable', 'jscfr' ); ?></label>
+                                <div class="jscfr-mb-control">
+                                    <label class="jscfr-toggle">
+                                        <input type="checkbox" name="sortable" value="1" <?php checked( ! empty( $def['sortable'] ) ); ?> />
+                                        <span class="jscfr-toggle-slider"></span>
+                                    </label>
+                                    <span class="jscfr-mb-toggle-desc"><?php esc_html_e( 'Allow drag-and-drop reordering of connected items in the metabox.', 'jscfr' ); ?></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="jscfr-mb-tab-panel" data-jscfr-panel="from">
+                            <?php $this->render_side_fields( 'from', $def['from'], $post_types, $taxonomies ); ?>
+                        </div>
+
+                        <div class="jscfr-mb-tab-panel" data-jscfr-panel="to">
+                            <?php $this->render_side_fields( 'to', $def['to'], $post_types, $taxonomies ); ?>
+                        </div>
                     </div>
 
-                    <!-- From side -->
-                    <?php $this->render_side_fields( 'from', $def['from'], $post_types, $taxonomies ); ?>
-
-                    <!-- To side -->
-                    <?php $this->render_side_fields( 'to', $def['to'], $post_types, $taxonomies ); ?>
-
-                    <!-- Options -->
-                    <div class="jscfr-rel-section">
-                        <h2><?php esc_html_e( 'Options', 'jscfr' ); ?></h2>
-                        <table class="form-table">
-                            <tr>
-                                <th scope="row"><?php esc_html_e( 'Bidirectional', 'jscfr' ); ?></th>
-                                <td>
-                                    <label>
-                                        <input type="checkbox" name="bidirectional" value="1"
-                                               <?php checked( ! empty( $def['bidirectional'] ) ); ?> />
-                                        <?php esc_html_e( 'When a connection is created from A to B, automatically create the reverse connection from B to A.', 'jscfr' ); ?>
-                                    </label>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th scope="row"><?php esc_html_e( 'Sortable', 'jscfr' ); ?></th>
-                                <td>
-                                    <label>
-                                        <input type="checkbox" name="sortable" value="1"
-                                               <?php checked( ! empty( $def['sortable'] ) ); ?> />
-                                        <?php esc_html_e( 'Allow drag-and-drop reordering of connected items.', 'jscfr' ); ?>
-                                    </label>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-
-                    <p class="submit">
+                    <div class="jscfr-mb-footer">
                         <button type="submit" class="button button-primary button-large" id="jscfr-rel-save">
-                            <?php esc_html_e( 'Save Relationship', 'jscfr' ); ?>
+                            <?php echo esc_html( $is_edit ? __( 'Save Changes', 'jscfr' ) : __( 'Create Relationship', 'jscfr' ) ); ?>
                         </button>
+                        <a href="<?php echo $back_url; ?>" class="button button-large"><?php esc_html_e( 'Cancel', 'jscfr' ); ?></a>
                         <span class="spinner" id="jscfr-rel-spinner"></span>
-                    </p>
+                    </div>
                 </form>
-
             </div>
             <?php
         }
@@ -434,90 +434,64 @@ if ( ! class_exists( 'JSCFR_Relationships' ) ) {
          * @param array  $taxonomies  Taxonomy objects.
          */
         private function render_side_fields( $side, $values, $post_types, $taxonomies ) {
-            $side_label   = 'from' === $side ? __( 'From', 'jscfr' ) : __( 'To', 'jscfr' );
             $object_type  = isset( $values['object_type'] ) ? $values['object_type'] : 'post';
             $post_type    = isset( $values['post_type'] ) ? $values['post_type'] : '';
             $taxonomy     = isset( $values['taxonomy'] ) ? $values['taxonomy'] : '';
             $mb_title     = isset( $values['meta_box']['title'] ) ? $values['meta_box']['title'] : '';
             ?>
-            <div class="jscfr-rel-section">
-                <h2><?php echo esc_html( $side_label ); ?></h2>
-                <table class="form-table">
-                    <tr>
-                        <th scope="row">
-                            <label for="jscfr-rel-<?php echo esc_attr( $side ); ?>-object-type">
-                                <?php esc_html_e( 'Object Type', 'jscfr' ); ?>
-                            </label>
-                        </th>
-                        <td>
-                            <select id="jscfr-rel-<?php echo esc_attr( $side ); ?>-object-type"
-                                    name="<?php echo esc_attr( $side ); ?>[object_type]"
-                                    class="jscfr-rel-object-type" data-side="<?php echo esc_attr( $side ); ?>">
-                                <option value="post" <?php selected( $object_type, 'post' ); ?>>
-                                    <?php esc_html_e( 'Post', 'jscfr' ); ?>
-                                </option>
-                                <option value="term" <?php selected( $object_type, 'term' ); ?>>
-                                    <?php esc_html_e( 'Term', 'jscfr' ); ?>
-                                </option>
-                                <option value="user" <?php selected( $object_type, 'user' ); ?>>
-                                    <?php esc_html_e( 'User', 'jscfr' ); ?>
-                                </option>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr class="jscfr-rel-row-post-type" data-side="<?php echo esc_attr( $side ); ?>"
-                        style="<?php echo 'post' !== $object_type ? 'display:none;' : ''; ?>">
-                        <th scope="row">
-                            <label for="jscfr-rel-<?php echo esc_attr( $side ); ?>-post-type">
-                                <?php esc_html_e( 'Post Type', 'jscfr' ); ?>
-                            </label>
-                        </th>
-                        <td>
-                            <select id="jscfr-rel-<?php echo esc_attr( $side ); ?>-post-type"
-                                    name="<?php echo esc_attr( $side ); ?>[post_type]">
-                                <?php foreach ( $post_types as $pt ) : ?>
-                                    <option value="<?php echo esc_attr( $pt->name ); ?>"
-                                            <?php selected( $post_type, $pt->name ); ?>>
-                                        <?php echo esc_html( $pt->labels->singular_name ); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr class="jscfr-rel-row-taxonomy" data-side="<?php echo esc_attr( $side ); ?>"
-                        style="<?php echo 'term' !== $object_type ? 'display:none;' : ''; ?>">
-                        <th scope="row">
-                            <label for="jscfr-rel-<?php echo esc_attr( $side ); ?>-taxonomy">
-                                <?php esc_html_e( 'Taxonomy', 'jscfr' ); ?>
-                            </label>
-                        </th>
-                        <td>
-                            <select id="jscfr-rel-<?php echo esc_attr( $side ); ?>-taxonomy"
-                                    name="<?php echo esc_attr( $side ); ?>[taxonomy]">
-                                <?php foreach ( $taxonomies as $tax ) : ?>
-                                    <option value="<?php echo esc_attr( $tax->name ); ?>"
-                                            <?php selected( $taxonomy, $tax->name ); ?>>
-                                        <?php echo esc_html( $tax->labels->singular_name ); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th scope="row">
-                            <label for="jscfr-rel-<?php echo esc_attr( $side ); ?>-mb-title">
-                                <?php esc_html_e( 'Meta Box Title', 'jscfr' ); ?>
-                            </label>
-                        </th>
-                        <td>
-                            <input type="text" id="jscfr-rel-<?php echo esc_attr( $side ); ?>-mb-title"
-                                   name="<?php echo esc_attr( $side ); ?>[meta_box][title]"
-                                   class="regular-text"
-                                   value="<?php echo esc_attr( $mb_title ); ?>"
-                                   placeholder="<?php esc_attr_e( 'e.g. Related Items', 'jscfr' ); ?>" />
-                        </td>
-                    </tr>
-                </table>
+            <div class="jscfr-mb-row">
+                <label for="jscfr-rel-<?php echo esc_attr( $side ); ?>-object-type"><?php esc_html_e( 'Object Type', 'jscfr' ); ?></label>
+                <div class="jscfr-mb-control">
+                    <select id="jscfr-rel-<?php echo esc_attr( $side ); ?>-object-type"
+                            name="<?php echo esc_attr( $side ); ?>[object_type]"
+                            class="jscfr-rel-object-type" data-side="<?php echo esc_attr( $side ); ?>">
+                        <option value="post" <?php selected( $object_type, 'post' ); ?>><?php esc_html_e( 'Post', 'jscfr' ); ?></option>
+                        <option value="term" <?php selected( $object_type, 'term' ); ?>><?php esc_html_e( 'Term', 'jscfr' ); ?></option>
+                        <option value="user" <?php selected( $object_type, 'user' ); ?>><?php esc_html_e( 'User', 'jscfr' ); ?></option>
+                    </select>
+                    <p class="jscfr-mb-desc"><?php esc_html_e( 'What kind of objects live on this side of the relationship.', 'jscfr' ); ?></p>
+                </div>
+            </div>
+
+            <div class="jscfr-mb-row jscfr-rel-row-post-type" data-side="<?php echo esc_attr( $side ); ?>"
+                 style="<?php echo 'post' !== $object_type ? 'display:none;' : ''; ?>">
+                <label for="jscfr-rel-<?php echo esc_attr( $side ); ?>-post-type"><?php esc_html_e( 'Post Type', 'jscfr' ); ?></label>
+                <div class="jscfr-mb-control">
+                    <select id="jscfr-rel-<?php echo esc_attr( $side ); ?>-post-type"
+                            name="<?php echo esc_attr( $side ); ?>[post_type]">
+                        <?php foreach ( $post_types as $pt ) : ?>
+                            <option value="<?php echo esc_attr( $pt->name ); ?>" <?php selected( $post_type, $pt->name ); ?>>
+                                <?php echo esc_html( $pt->labels->singular_name ); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+
+            <div class="jscfr-mb-row jscfr-rel-row-taxonomy" data-side="<?php echo esc_attr( $side ); ?>"
+                 style="<?php echo 'term' !== $object_type ? 'display:none;' : ''; ?>">
+                <label for="jscfr-rel-<?php echo esc_attr( $side ); ?>-taxonomy"><?php esc_html_e( 'Taxonomy', 'jscfr' ); ?></label>
+                <div class="jscfr-mb-control">
+                    <select id="jscfr-rel-<?php echo esc_attr( $side ); ?>-taxonomy"
+                            name="<?php echo esc_attr( $side ); ?>[taxonomy]">
+                        <?php foreach ( $taxonomies as $tax ) : ?>
+                            <option value="<?php echo esc_attr( $tax->name ); ?>" <?php selected( $taxonomy, $tax->name ); ?>>
+                                <?php echo esc_html( $tax->labels->singular_name ); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+
+            <div class="jscfr-mb-row">
+                <label for="jscfr-rel-<?php echo esc_attr( $side ); ?>-mb-title"><?php esc_html_e( 'Meta Box Title', 'jscfr' ); ?></label>
+                <div class="jscfr-mb-control">
+                    <input type="text" id="jscfr-rel-<?php echo esc_attr( $side ); ?>-mb-title"
+                           name="<?php echo esc_attr( $side ); ?>[meta_box][title]"
+                           value="<?php echo esc_attr( $mb_title ); ?>"
+                           placeholder="<?php esc_attr_e( 'e.g. Related Items', 'jscfr' ); ?>" />
+                    <p class="jscfr-mb-desc"><?php esc_html_e( 'Title of the connection metabox shown on the post edit screen.', 'jscfr' ); ?></p>
+                </div>
             </div>
             <?php
         }
@@ -653,8 +627,8 @@ if ( ! class_exists( 'JSCFR_Relationships' ) ) {
                     $(document).on('change', '.jscfr-rel-object-type', function(){
                         var side = $(this).data('side');
                         var val  = $(this).val();
-                        $('tr.jscfr-rel-row-post-type[data-side="'+side+'"]').toggle( val === 'post' );
-                        $('tr.jscfr-rel-row-taxonomy[data-side="'+side+'"]').toggle( val === 'term' );
+                        $('.jscfr-rel-row-post-type[data-side="'+side+'"]').toggle( val === 'post' );
+                        $('.jscfr-rel-row-taxonomy[data-side="'+side+'"]').toggle( val === 'term' );
                     });
 
                     /* Save relationship */
