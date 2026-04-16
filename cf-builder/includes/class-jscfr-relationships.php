@@ -623,6 +623,16 @@ if ( ! class_exists( 'JSCFR_Relationships' ) ) {
                     var nonce   = '<?php echo esc_js( $nonce ); ?>';
                     var ajaxUrl = '<?php echo esc_js( $ajax_url ); ?>';
 
+                    /* Tab switching for Meta Box–style form */
+                    $(document).on('click', '.jscfr-mb-tab-nav li[data-jscfr-tab]', function(){
+                        var $tabs  = $(this).closest('.jscfr-mb-tabs');
+                        var target = $(this).data('jscfr-tab');
+                        $tabs.find('.jscfr-mb-tab-nav li').removeClass('active');
+                        $(this).addClass('active');
+                        $tabs.find('.jscfr-mb-tab-panel').removeClass('active');
+                        $tabs.find('.jscfr-mb-tab-panel[data-jscfr-panel="'+target+'"]').addClass('active');
+                    });
+
                     /* Toggle post type / taxonomy rows */
                     $(document).on('change', '.jscfr-rel-object-type', function(){
                         var side = $(this).data('side');
