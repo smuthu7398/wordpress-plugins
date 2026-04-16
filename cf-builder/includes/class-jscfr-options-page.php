@@ -92,48 +92,44 @@ if ( ! class_exists( 'JSCFR_Options_Page' ) ) {
                 wp_die( esc_html__( 'Unauthorized', 'jscfr' ) );
             }
             $pages = self::get_pages();
+            wp_enqueue_style( 'jscfr-cpt-css', JSCFR_PLUGIN_URL . 'assets/css/jscfr-cpt.css', array(), JSCFR_VERSION );
             ?>
-            <div class="wrap jscfr-builder-wrap">
-                <h1><?php esc_html_e( 'Options Pages', 'jscfr' ); ?></h1>
-                <p class="description"><?php esc_html_e( 'Create options pages for storing global field data. Assign field groups using location rules with "Options Page" param.', 'jscfr' ); ?></p>
-                <hr class="wp-header-end">
+            <div class="wrap jscfr-cpt-wrap">
+                <h1><?php esc_html_e( 'Options Pages', 'jscfr' ); ?> <a href="#" class="page-title-action" id="jscfr-opt-add-page"><?php esc_html_e( 'Add New', 'jscfr' ); ?></a></h1>
+                <p class="description" style="margin:0 0 16px;"><?php esc_html_e( 'Create options pages for storing global field data. Assign field groups using location rules with "Options Page" param.', 'jscfr' ); ?></p>
 
                 <div id="jscfr-options-pages-manager">
-                    <table class="wp-list-table widefat striped jscfr-fg-table" id="jscfr-opt-pages-table">
+                    <table class="wp-list-table widefat fixed striped" id="jscfr-opt-pages-table">
                         <thead>
                             <tr>
                                 <th><?php esc_html_e( 'Title', 'jscfr' ); ?></th>
                                 <th><?php esc_html_e( 'Menu Title', 'jscfr' ); ?></th>
                                 <th><?php esc_html_e( 'Slug', 'jscfr' ); ?></th>
                                 <th><?php esc_html_e( 'Parent', 'jscfr' ); ?></th>
-                                <th><?php esc_html_e( 'Actions', 'jscfr' ); ?></th>
+                                <th style="width:80px;text-align:right;"><?php esc_html_e( 'Actions', 'jscfr' ); ?></th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php if ( empty( $pages ) ) : ?>
-                                <tr class="jscfr-opt-empty-row"><td colspan="5"><em><?php esc_html_e( 'No options pages yet.', 'jscfr' ); ?></em></td></tr>
+                                <tr class="jscfr-no-items jscfr-opt-empty-row"><td colspan="5"><?php esc_html_e( 'No options pages yet.', 'jscfr' ); ?></td></tr>
                             <?php else : ?>
                                 <?php foreach ( $pages as $i => $pg ) : ?>
                                     <tr data-index="<?php echo $i; ?>">
                                         <td><input type="text" class="widefat jscfr-opt-title" value="<?php echo esc_attr( $pg['title'] ); ?>" /></td>
                                         <td><input type="text" class="widefat jscfr-opt-menu-title" value="<?php echo esc_attr( isset( $pg['menu_title'] ) ? $pg['menu_title'] : '' ); ?>" /></td>
-                                        <td><code><?php echo esc_html( $pg['slug'] ); ?></code></td>
+                                        <td><span class="jscfr-slug-link"><?php echo esc_html( $pg['slug'] ); ?></span></td>
                                         <td><input type="text" class="widefat jscfr-opt-parent" value="<?php echo esc_attr( isset( $pg['parent'] ) ? $pg['parent'] : '' ); ?>" placeholder="<?php esc_attr_e( 'e.g. jscfr-builder', 'jscfr' ); ?>" /></td>
-                                        <td><button type="button" class="button jscfr-opt-remove">&times;</button></td>
+                                        <td class="jscfr-col-actions"><button type="button" class="button jscfr-btn-ghost jscfr-btn-danger jscfr-opt-remove"><?php esc_html_e( 'Delete', 'jscfr' ); ?></button></td>
                                     </tr>
                                 <?php endforeach; ?>
                             <?php endif; ?>
                         </tbody>
                     </table>
-                    <p>
-                        <button type="button" class="button" id="jscfr-opt-add-page">
-                            <span class="dashicons dashicons-plus-alt2" style="vertical-align:middle;margin-right:4px;"></span>
-                            <?php esc_html_e( 'Add Options Page', 'jscfr' ); ?>
-                        </button>
-                        <button type="button" class="button button-primary" id="jscfr-opt-save-pages">
+                    <p style="margin-top:16px;">
+                        <button type="button" class="button button-primary button-large" id="jscfr-opt-save-pages">
                             <?php esc_html_e( 'Save Pages', 'jscfr' ); ?>
                         </button>
-                        <span id="jscfr-opt-status"></span>
+                        <span id="jscfr-opt-status" style="margin-left:10px;vertical-align:middle;"></span>
                     </p>
                 </div>
             </div>
@@ -142,16 +138,17 @@ if ( ! class_exists( 'JSCFR_Options_Page' ) ) {
                 var $tbl = $('#jscfr-opt-pages-table tbody');
 
                 // Add page
-                $('#jscfr-opt-add-page').on('click', function(){
+                $('#jscfr-opt-add-page').on('click', function(e){
+                    e.preventDefault();
                     $tbl.find('.jscfr-opt-empty-row').remove();
                     var slug = 'opt_' + Math.random().toString(36).substr(2,6);
                     $tbl.append(
                         '<tr>' +
                         '<td><input type="text" class="widefat jscfr-opt-title" value="" placeholder="Page Title" /></td>' +
                         '<td><input type="text" class="widefat jscfr-opt-menu-title" value="" placeholder="Menu Title" /></td>' +
-                        '<td><code>' + slug + '</code><input type="hidden" class="jscfr-opt-slug" value="' + slug + '" /></td>' +
+                        '<td><span class="jscfr-slug-link">' + slug + '</span><input type="hidden" class="jscfr-opt-slug" value="' + slug + '" /></td>' +
                         '<td><input type="text" class="widefat jscfr-opt-parent" value="" placeholder="e.g. jscfr-builder" /></td>' +
-                        '<td><button type="button" class="button jscfr-opt-remove">&times;</button></td>' +
+                        '<td class="jscfr-col-actions"><button type="button" class="button jscfr-btn-ghost jscfr-btn-danger jscfr-opt-remove">Delete</button></td>' +
                         '</tr>'
                     );
                 });
@@ -166,7 +163,7 @@ if ( ! class_exists( 'JSCFR_Options_Page' ) ) {
                     var pages = [];
                     $tbl.find('tr').each(function(){
                         if ($(this).hasClass('jscfr-opt-empty-row')) return;
-                        var slug = $(this).find('.jscfr-opt-slug').val() || $(this).find('code').text().trim();
+                        var slug = $(this).find('.jscfr-opt-slug').val() || $(this).find('.jscfr-slug-link').text().trim() || $(this).find('code').text().trim();
                         pages.push({
                             title:      $(this).find('.jscfr-opt-title').val(),
                             menu_title: $(this).find('.jscfr-opt-menu-title').val(),

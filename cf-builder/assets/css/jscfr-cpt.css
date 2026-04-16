@@ -41,7 +41,8 @@
 /* Table wrapped in a card */
 .jscfr-cpt-wrap #jscfr-cpt-list,
 .jscfr-cpt-wrap #jscfr-tax-list,
-.jscfr-cpt-wrap #jscfr-rel-list {
+.jscfr-cpt-wrap #jscfr-rel-list,
+.jscfr-cpt-wrap #jscfr-opt-pages-table {
     margin-top: 0;
     border: 1px solid #e0e0e3;
     border-radius: 8px;
@@ -53,7 +54,8 @@
 }
 .jscfr-cpt-wrap #jscfr-cpt-list thead th,
 .jscfr-cpt-wrap #jscfr-tax-list thead th,
-.jscfr-cpt-wrap #jscfr-rel-list thead th {
+.jscfr-cpt-wrap #jscfr-rel-list thead th,
+.jscfr-cpt-wrap #jscfr-opt-pages-table thead th {
     background: #fafafa;
     border-bottom: 1px solid #e0e0e3;
     padding: 14px 18px;
@@ -65,7 +67,8 @@
 }
 .jscfr-cpt-wrap #jscfr-cpt-list tbody td,
 .jscfr-cpt-wrap #jscfr-tax-list tbody td,
-.jscfr-cpt-wrap #jscfr-rel-list tbody td {
+.jscfr-cpt-wrap #jscfr-rel-list tbody td,
+.jscfr-cpt-wrap #jscfr-opt-pages-table tbody td {
     padding: 16px 18px;
     border-top: 1px solid #f0f0f1;
     vertical-align: middle;
@@ -75,10 +78,12 @@
 }
 .jscfr-cpt-wrap #jscfr-cpt-list tbody tr:first-child td,
 .jscfr-cpt-wrap #jscfr-tax-list tbody tr:first-child td,
-.jscfr-cpt-wrap #jscfr-rel-list tbody tr:first-child td { border-top: 0; }
+.jscfr-cpt-wrap #jscfr-rel-list tbody tr:first-child td,
+.jscfr-cpt-wrap #jscfr-opt-pages-table tbody tr:first-child td { border-top: 0; }
 .jscfr-cpt-wrap #jscfr-cpt-list tbody tr:hover td,
 .jscfr-cpt-wrap #jscfr-tax-list tbody tr:hover td,
-.jscfr-cpt-wrap #jscfr-rel-list tbody tr:hover td { background: #f7fafd; }
+.jscfr-cpt-wrap #jscfr-rel-list tbody tr:hover td,
+.jscfr-cpt-wrap #jscfr-opt-pages-table tbody tr:hover td { background: #f7fafd; }
 
 .jscfr-cpt-wrap .jscfr-no-items td {
     color: #646970;
