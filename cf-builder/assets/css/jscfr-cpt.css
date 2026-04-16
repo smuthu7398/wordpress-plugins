@@ -608,3 +608,92 @@ form.jscfr-mb-style { margin-top: 0; }
     border-color: #8c8f94;
     color: #1d2327;
 }
+
+/* ============================================================
+   Options Pages manager — card layout
+   ============================================================ */
+.jscfr-opt-intro {
+    margin: 0 0 18px;
+    color: #50575e;
+    font-size: 13px;
+}
+.jscfr-opt-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 22px;
+}
+.jscfr-opt-empty {
+    background: #fff;
+    border: 1px dashed #dcdcde;
+    border-radius: 10px;
+    padding: 32px 24px;
+    text-align: center;
+    color: #646970;
+    font-size: 14px;
+}
+.jscfr-opt-card {
+    background: #fff;
+    border: 1px solid #e0e0e3;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    overflow: hidden;
+}
+.jscfr-opt-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 22px;
+    background: #fbfbfc;
+    border-bottom: 1px solid #e0e0e3;
+}
+.jscfr-opt-card-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d2327;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.jscfr-opt-card-slug {
+    font-family: Menlo, Consolas, monospace;
+    font-size: 12px;
+}
+.jscfr-opt-card-header .jscfr-btn-ghost {
+    margin-left: auto;
+}
+.jscfr-opt-card-body {
+    padding: 4px 22px 18px;
+}
+.jscfr-opt-card-body .jscfr-mb-row:last-child {
+    border-bottom: none;
+}
+.jscfr-opt-card-body .jscfr-opt-title,
+.jscfr-opt-card-body .jscfr-opt-menu-title,
+.jscfr-opt-card-body .jscfr-opt-parent {
+    width: 100%;
+    max-width: 520px;
+    padding: 8px 12px;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1.4;
+    box-shadow: none;
+}
+.jscfr-opt-card-body .jscfr-opt-title:focus,
+.jscfr-opt-card-body .jscfr-opt-menu-title:focus,
+.jscfr-opt-card-body .jscfr-opt-parent:focus {
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+    outline: none;
+}
+.jscfr-opt-status {
+    margin-left: 12px;
+    vertical-align: middle;
+    font-size: 13px;
+    font-weight: 500;
+}
+.jscfr-opt-status.is-success { color: #008a20; }
+.jscfr-opt-status.is-error   { color: #b32d2e; }
