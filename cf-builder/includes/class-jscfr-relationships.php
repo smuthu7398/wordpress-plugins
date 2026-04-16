@@ -233,73 +233,56 @@ if ( ! class_exists( 'JSCFR_Relationships' ) ) {
         private function render_list_page() {
             $definitions = $this->get_definitions();
             $edit_url    = admin_url( 'admin.php?page=jscfr-relationships&action=edit' );
+            $add_url     = esc_url( $edit_url . '&rel_id=new' );
+
+            // Reuse the CPT/Tax list page stylesheet for modern UI.
+            wp_enqueue_style( 'jscfr-cpt-css', JSCFR_PLUGIN_URL . 'assets/css/jscfr-cpt.css', array(), JSCFR_VERSION );
             ?>
-            <div class="wrap jscfr-builder-wrap jscfr-rel-list-wrap">
+            <div class="wrap jscfr-cpt-wrap">
+                <h1><?php esc_html_e( 'Relationships', 'jscfr' ); ?> <a href="<?php echo $add_url; ?>" class="page-title-action"><?php esc_html_e( 'Add New', 'jscfr' ); ?></a></h1>
 
-                <div class="jscfr-list-header">
-                    <h1><?php esc_html_e( 'Relationships', 'jscfr' ); ?></h1>
-                    <a href="<?php echo esc_url( $edit_url . '&rel_id=new' ); ?>" class="jscfr-btn-add-new">
-                        <span class="dashicons dashicons-plus-alt2"></span>
-                        <?php esc_html_e( 'Add New', 'jscfr' ); ?>
-                    </a>
-                </div>
-
-                <?php if ( empty( $definitions ) ) : ?>
-                    <div class="jscfr-empty-state">
-                        <span class="dashicons dashicons-networking jscfr-empty-icon"></span>
-                        <p><?php esc_html_e( 'No relationships defined yet.', 'jscfr' ); ?></p>
-                        <a href="<?php echo esc_url( $edit_url . '&rel_id=new' ); ?>" class="jscfr-btn-add-new jscfr-btn-lg">
-                            <?php esc_html_e( 'Create Your First Relationship', 'jscfr' ); ?>
-                        </a>
-                    </div>
-                <?php else : ?>
-
-                    <table class="jscfr-fg-table jscfr-rel-table">
-                        <thead>
-                            <tr>
-                                <th class="jscfr-col-title"><?php esc_html_e( 'Title', 'jscfr' ); ?></th>
-                                <th class="jscfr-col-from"><?php esc_html_e( 'From', 'jscfr' ); ?></th>
-                                <th class="jscfr-col-to"><?php esc_html_e( 'To', 'jscfr' ); ?></th>
-                                <th class="jscfr-col-bidir"><?php esc_html_e( 'Bidirectional', 'jscfr' ); ?></th>
-                                <th class="jscfr-col-actions"><?php esc_html_e( 'Actions', 'jscfr' ); ?></th>
-                            </tr>
-                        </thead>
-                        <tbody id="jscfr-rel-list">
+                <table class="wp-list-table widefat fixed striped" id="jscfr-rel-list">
+                    <thead>
+                        <tr>
+                            <th><?php esc_html_e( 'Label', 'jscfr' ); ?></th>
+                            <th><?php esc_html_e( 'From', 'jscfr' ); ?></th>
+                            <th><?php esc_html_e( 'To', 'jscfr' ); ?></th>
+                            <th><?php esc_html_e( 'Bidirectional', 'jscfr' ); ?></th>
+                            <th style="width:160px;"><?php esc_html_e( 'Actions', 'jscfr' ); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php if ( empty( $definitions ) ) : ?>
+                        <tr class="jscfr-no-items"><td colspan="5"><?php esc_html_e( 'No relationships defined yet.', 'jscfr' ); ?></td></tr>
+                    <?php else : ?>
                         <?php foreach ( $definitions as $def ) :
-                            $rel_id = $def['id'];
-                            $label  = ! empty( $def['label'] ) ? $def['label'] : __( '(no label)', 'jscfr' );
-                            $from   = $this->describe_side( $def['from'] );
-                            $to     = $this->describe_side( $def['to'] );
-                            $bidir  = ! empty( $def['bidirectional'] );
-                        ?>
+                            $rel_id     = $def['id'];
+                            $label      = ! empty( $def['label'] ) ? $def['label'] : __( '(no label)', 'jscfr' );
+                            $from       = $this->describe_side( $def['from'] );
+                            $to         = $this->describe_side( $def['to'] );
+                            $bidir      = ! empty( $def['bidirectional'] );
+                            $row_edit_url = esc_url( $edit_url . '&rel_id=' . $rel_id );
+                            ?>
                             <tr data-rel-id="<?php echo esc_attr( $rel_id ); ?>">
-                                <td class="jscfr-col-title">
-                                    <strong>
-                                        <a href="<?php echo esc_url( $edit_url . '&rel_id=' . $rel_id ); ?>">
-                                            <?php echo esc_html( $label ); ?>
-                                        </a>
-                                    </strong>
-                                </td>
-                                <td class="jscfr-col-from"><?php echo esc_html( $from ); ?></td>
-                                <td class="jscfr-col-to"><?php echo esc_html( $to ); ?></td>
-                                <td class="jscfr-col-bidir">
-                                    <?php echo $bidir ? esc_html__( 'Yes', 'jscfr' ) : esc_html__( 'No', 'jscfr' ); ?>
+                                <td class="jscfr-col-slug"><a href="<?php echo $row_edit_url; ?>" class="jscfr-slug-link"><?php echo esc_html( $label ); ?></a></td>
+                                <td><span class="jscfr-pill"><?php echo esc_html( $from ); ?></span></td>
+                                <td><span class="jscfr-pill"><?php echo esc_html( $to ); ?></span></td>
+                                <td>
+                                    <?php if ( $bidir ) : ?>
+                                        <span class="jscfr-badge jscfr-badge-yes"><?php esc_html_e( 'Yes', 'jscfr' ); ?></span>
+                                    <?php else : ?>
+                                        <span class="jscfr-badge jscfr-badge-no"><?php esc_html_e( 'No', 'jscfr' ); ?></span>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="jscfr-col-actions">
-                                    <a href="<?php echo esc_url( $edit_url . '&rel_id=' . $rel_id ); ?>" class="button button-small">
-                                        <?php esc_html_e( 'Edit', 'jscfr' ); ?>
-                                    </a>
-                                    <button type="button" class="button button-small button-link-delete jscfr-rel-delete" data-id="<?php echo esc_attr( $rel_id ); ?>">
-                                        <?php esc_html_e( 'Delete', 'jscfr' ); ?>
-                                    </button>
+                                    <a href="<?php echo $row_edit_url; ?>" class="button jscfr-btn-ghost"><?php esc_html_e( 'Edit', 'jscfr' ); ?></a>
+                                    <button type="button" class="button jscfr-btn-ghost jscfr-btn-danger jscfr-rel-delete" data-id="<?php echo esc_attr( $rel_id ); ?>"><?php esc_html_e( 'Delete', 'jscfr' ); ?></button>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
-                        </tbody>
-                    </table>
-
-                <?php endif; ?>
-
+                    <?php endif; ?>
+                    </tbody>
+                </table>
             </div>
             <?php
         }
