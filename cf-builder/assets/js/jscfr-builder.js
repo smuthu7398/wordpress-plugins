@@ -1375,7 +1375,7 @@
                 $(this).toggle(match);
             });
             // Hide empty categories
-            $addFieldModal.find('.jscfr-aft-category').each(function () {
+            $addFieldModal.find('.jscfr-aft-category').show().each(function () {
                 var hasVisible = $(this).find('.jscfr-aft-item:visible').length > 0;
                 $(this).toggle(hasVisible);
             });
