@@ -317,6 +317,7 @@ if ( ! class_exists( 'JSCFR_Metabox' ) ) {
             }
 
             $has_tabs = count( $tabs ) > 1;
+            $tab_placement = isset( $fg['settings']['tab_placement'] ) ? $fg['settings']['tab_placement'] : 'top';
 
             // Open tabs wrapper for vertical layout
             if ( $has_tabs ) {
