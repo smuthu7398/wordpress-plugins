@@ -994,6 +994,7 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
                     'confirm_delete'   => __( 'Are you sure?', 'jscfr' ),
                     'saved'            => __( 'Saved!', 'jscfr' ),
                     'save_error'       => __( 'Error saving.', 'jscfr' ),
+                    'save_changes'     => __( 'Save Changes', 'jscfr' ),
                     'tab_label'        => __( 'Tab Label', 'jscfr' ),
                     'tab_name'         => __( 'Tab Name', 'jscfr' ),
                     'group_label'      => __( 'Group Label', 'jscfr' ),

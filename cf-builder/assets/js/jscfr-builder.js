@@ -1093,16 +1093,21 @@
         var origText = $btn.first().html();
         $btn.prop('disabled', true).html('<span class="dashicons dashicons-update jscfr-spin" style="vertical-align:middle;margin-right:4px;"></span> Saving\u2026');
 
+        var wasNew = window.location.href.indexOf('fg_id=new') !== -1;
+
         $.post(B.ajax_url, {
             action: 'jscfr_save_field_group',
             nonce:  B.nonce,
             field_group: JSON.stringify(data)
         }, function (res) {
+            if (res.success && wasNew) {
+                origText = B.i18n.save_changes || 'Save Changes';
+            }
             $btn.prop('disabled', false).html(origText);
             if (res.success) {
                 FG = res.data.field_group;
                 showToast(B.i18n.saved, 'success');
-                if (res.data.redirect && window.location.href.indexOf('fg_id=new') !== -1) {
+                if (res.data.redirect && wasNew) {
                     window.history.replaceState(null, '', res.data.redirect);
                 }
             } else {
