@@ -1124,8 +1124,10 @@
     /* ================================================================ */
     function initSortables() {
         $tabs.sortable({ handle: '> .jscfr-tab-head .jscfr-drag', items: '> .jscfr-tab-card', placeholder: 'jscfr-sortable-ph', tolerance: 'pointer' });
-        $tabs.find('.jscfr-groups-container').sortable({ handle: '> .jscfr-group-card > .jscfr-group-head .jscfr-drag', items: '> .jscfr-group-card', placeholder: 'jscfr-sortable-ph', tolerance: 'pointer', connectWith: '.jscfr-groups-container' });
-        $tabs.find('.jscfr-fields-container').sortable({ handle: '> .jscfr-field-row .jscfr-drag', items: '> .jscfr-field-row', placeholder: 'jscfr-sortable-ph', tolerance: 'pointer', connectWith: '.jscfr-fields-container' });
+        // Handle selector is resolved relative to each item (jQuery UI .find()),
+        // so it must match descendants of the item — not the item itself.
+        $tabs.find('.jscfr-groups-container').sortable({ handle: '> .jscfr-group-head .jscfr-drag', items: '> .jscfr-group-card', placeholder: 'jscfr-sortable-ph', tolerance: 'pointer', connectWith: '.jscfr-groups-container' });
+        $tabs.find('.jscfr-fields-container').sortable({ handle: '> .jscfr-field-head .jscfr-drag', items: '> .jscfr-field-row', placeholder: 'jscfr-sortable-ph', tolerance: 'pointer', connectWith: '.jscfr-fields-container' });
     }
 
     /* ================================================================ */
@@ -1794,6 +1796,29 @@
 
     $(document).on('click.jscfr', '.jscfr-ca-remove', function() {
         $(this).closest('.jscfr-ca-row').remove();
+    });
+
+    /* ================================================================ */
+    /*  Clear Cache button                                              */
+    /* ================================================================ */
+    $(document).on('click.jscfr', '#jscfr-clear-cache-btn', function () {
+        var $btn = $(this);
+        var origHtml = $btn.html();
+        $btn.prop('disabled', true).html('<span class="dashicons dashicons-update jscfr-spin" style="vertical-align:middle;margin-right:4px;"></span> Clearing…');
+        $.post(B.ajax_url, {
+            action: 'jscfr_clear_cache',
+            nonce:  B.nonce
+        }, function (res) {
+            $btn.prop('disabled', false).html(origHtml);
+            if (res && res.success) {
+                showToast((res.data && res.data.message) || 'Cache cleared.', 'success');
+            } else {
+                showToast((res && res.data) || 'Failed to clear cache.', 'error');
+            }
+        }).fail(function () {
+            $btn.prop('disabled', false).html(origHtml);
+            showToast('Network error. Could not clear cache.', 'error');
+        });
     });
 
     /* ================================================================ */

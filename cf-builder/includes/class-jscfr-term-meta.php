@@ -31,8 +31,6 @@ if ( ! class_exists( 'JSCFR_Term_Meta' ) ) {
             foreach ( $taxonomies as $tax ) {
                 add_action( "{$tax}_edit_form_fields", array( $this, 'render_fields' ), 10, 2 );
                 add_action( "edited_{$tax}", array( $this, 'save_fields' ), 10, 2 );
-                add_action( "{$tax}_add_form_fields", array( $this, 'render_add_fields' ), 10 );
-                add_action( "created_{$tax}", array( $this, 'save_fields' ), 10, 2 );
             }
 
             add_action( 'admin_enqueue_scripts', array( $this, 'enqueue' ) );
@@ -275,6 +273,11 @@ if ( ! class_exists( 'JSCFR_Term_Meta' ) ) {
             foreach ( $fgs as $fg ) {
                 if ( empty( $fg['tabs'] ) ) continue;
                 $fg_id = $fg['id'];
+                // Track names already written in this save cycle to avoid one
+                // group's data silently overwriting another's (legacy configs
+                // with duplicate names from the "Copy" feature).
+                $written_groups = array();
+                $written_fields = array();
                 foreach ( $fg['tabs'] as $tab ) {
                     if ( empty( $tab['groups'] ) ) continue;
                     $tab_id = $tab['id'];
@@ -288,23 +291,45 @@ if ( ! class_exists( 'JSCFR_Term_Meta' ) ) {
                         // Skip the __IDX__ template row (never submitted from real inputs, but guard anyway)
                         unset( $rows['__IDX__'] );
 
+                        // Build sanitized rows (indexed) for group-level meta + per-field writes.
+                        $sanitized_rows = array();
+                        foreach ( $rows as $idx => $row ) {
+                            if ( ! is_array( $row ) ) continue;
+                            $clean_row = array();
+                            foreach ( $group['fields'] as $field ) {
+                                $raw_val = isset( $row[ $field['id'] ] ) ? $row[ $field['id'] ] : '';
+                                $clean_row[ $field['id'] ] = $metabox->sanitize_field_value( $raw_val, $field );
+                            }
+                            $sanitized_rows[] = $clean_row;
+                        }
+
+                        // Write group-level meta (mirrors post save — enables jscfr_have_rows on terms).
+                        $group_name = ! empty( $group['name'] ) ? $group['name'] : $group['id'];
+                        if ( isset( $written_groups[ $group_name ] ) ) {
+                            // Duplicate name from a legacy config — skip to avoid overwriting
+                            // the first group's data. Re-save the field group to dedupe.
+                            continue;
+                        }
+                        $written_groups[ $group_name ] = true;
+                        JSCFR_Plugin::set_field_value( $group_name, $sanitized_rows, $term_id, 'term' );
+
+                        // Write per-field meta (enables jscfr_get_field by name + WP_Term_Query meta_query).
                         foreach ( $group['fields'] as $field ) {
                             $field_name = ! empty( $field['name'] ) ? $field['name'] : $field['id'];
+                            if ( isset( $written_fields[ $field_name ] ) ) {
+                                continue;
+                            }
+                            $written_fields[ $field_name ] = true;
 
                             if ( $clonable ) {
-                                // Collect all row values for this field into an indexed array
                                 $collected = array();
-                                foreach ( $rows as $idx => $row ) {
-                                    if ( ! is_array( $row ) ) continue;
-                                    $raw_val = isset( $row[ $field['id'] ] ) ? $row[ $field['id'] ] : '';
-                                    $collected[] = $metabox->sanitize_field_value( $raw_val, $field );
+                                foreach ( $sanitized_rows as $clean_row ) {
+                                    $collected[] = isset( $clean_row[ $field['id'] ] ) ? $clean_row[ $field['id'] ] : '';
                                 }
                                 JSCFR_Plugin::set_field_value( $field_name, $collected, $term_id, 'term' );
                             } else {
-                                $row0    = isset( $rows[0] ) && is_array( $rows[0] ) ? $rows[0] : array();
-                                $raw_val = isset( $row0[ $field['id'] ] ) ? $row0[ $field['id'] ] : '';
-                                $clean   = $metabox->sanitize_field_value( $raw_val, $field );
-                                JSCFR_Plugin::set_field_value( $field_name, $clean, $term_id, 'term' );
+                                $row0_val = isset( $sanitized_rows[0][ $field['id'] ] ) ? $sanitized_rows[0][ $field['id'] ] : '';
+                                JSCFR_Plugin::set_field_value( $field_name, $row0_val, $term_id, 'term' );
                             }
                         }
                     }

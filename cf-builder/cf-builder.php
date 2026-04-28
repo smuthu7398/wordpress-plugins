@@ -426,7 +426,72 @@ if ( ! class_exists( 'JSCFR_Plugin' ) ) {
                 }
             }
 
+            // Fallback: reconstruct group rows from individual field meta
+            // (handles legacy term/user/comment data saved before group-level meta was written).
+            if ( in_array( $object_type, array( 'term', 'user', 'comment' ), true ) ) {
+                $info = self::resolve_field( $field_name );
+                if ( $info && 'group' === $info['type'] ) {
+                    $rebuilt = self::reconstruct_group_from_fields( $info, $object_id, $object_type );
+                    if ( ! empty( $rebuilt ) ) {
+                        return $rebuilt;
+                    }
+                }
+            }
+
             return '';
+        }
+
+        /**
+         * Reconstruct a group's rows from per-field meta when group-level meta is absent.
+         *
+         * Handles both clonable groups (per-field arrays of row values) and
+         * non-clonable groups (per-field scalar values, treated as a single row).
+         */
+        private static function reconstruct_group_from_fields( $group_info, $object_id, $object_type ) {
+            $fg     = self::get_field_group( $group_info['fg_id'] );
+            if ( ! $fg || empty( $fg['tabs'] ) ) {
+                return array();
+            }
+
+            $group = null;
+            foreach ( $fg['tabs'] as $tab ) {
+                if ( ( isset( $tab['id'] ) ? $tab['id'] : '' ) !== $group_info['tab_id'] ) continue;
+                if ( empty( $tab['groups'] ) ) continue;
+                foreach ( $tab['groups'] as $g ) {
+                    if ( isset( $g['id'] ) && $g['id'] === $group_info['group_id'] ) {
+                        $group = $g;
+                        break 2;
+                    }
+                }
+            }
+            if ( ! $group || empty( $group['fields'] ) ) {
+                return array();
+            }
+
+            $clonable = isset( $group['clonable'] ) ? (bool) $group['clonable'] : true;
+            $rows     = array();
+
+            foreach ( $group['fields'] as $field ) {
+                $field_name = ! empty( $field['name'] ) ? $field['name'] : $field['id'];
+                $meta_key   = JSCFR_META_PREFIX . $field_name;
+
+                switch ( $object_type ) {
+                    case 'term':    $val = get_term_meta( $object_id, $meta_key, true ); break;
+                    case 'user':    $val = get_user_meta( $object_id, $meta_key, true ); break;
+                    case 'comment': $val = get_comment_meta( $object_id, $meta_key, true ); break;
+                    default:        $val = '';
+                }
+
+                if ( $clonable && is_array( $val ) ) {
+                    foreach ( $val as $idx => $row_val ) {
+                        $rows[ $idx ][ $field['id'] ] = $row_val;
+                    }
+                } else {
+                    $rows[0][ $field['id'] ] = $val;
+                }
+            }
+
+            return $rows;
         }
 
         /**

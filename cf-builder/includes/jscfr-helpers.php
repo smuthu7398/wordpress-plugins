@@ -24,6 +24,40 @@ $jscfr_row_state = array(
 );
 
 /* ================================================================== */
+/*  Object-context auto-detection                                      */
+/* ================================================================== */
+
+/**
+ * Resolve the implicit object context (id + type) for the current request.
+ *
+ * Used when callers omit the $post_id/$object_type arguments. Inside a
+ * `the_post()` loop we always read from the looped post (so per-item field
+ * lookups inside an archive listing work). Otherwise we fall back to the
+ * queried object — which gives terms/users their own context on archive,
+ * author, and term pages.
+ *
+ * @return array [ $object_id, $object_type ]
+ */
+function jscfr_resolve_current_object() {
+    if ( function_exists( 'in_the_loop' ) && in_the_loop() ) {
+        return array( get_the_ID(), 'post' );
+    }
+    if ( function_exists( 'get_queried_object' ) ) {
+        $obj = get_queried_object();
+        if ( $obj instanceof WP_Term ) {
+            return array( (int) $obj->term_id, 'term' );
+        }
+        if ( $obj instanceof WP_User ) {
+            return array( (int) $obj->ID, 'user' );
+        }
+        if ( $obj instanceof WP_Post ) {
+            return array( (int) $obj->ID, 'post' );
+        }
+    }
+    return array( get_the_ID(), 'post' );
+}
+
+/* ================================================================== */
 /*  Core data retrieval                                                */
 /* ================================================================== */
 
@@ -151,8 +185,13 @@ function jscfr_the_field( $selector, $post_id = null, $clone_index = 0 ) {
  *           $val = jscfr_get_sub_field( 'my_field' );
  *       }
  *   }
+ *
+ * Term/user/comment contexts:
+ *   jscfr_have_rows( 'my_group', $term_id, 'term' )
+ *   jscfr_have_rows( 'my_group', $user_id, 'user' )
+ *   jscfr_have_rows( 'my_group', $comment_id, 'comment' )
  */
-function jscfr_have_rows( $selector, $post_id = null ) {
+function jscfr_have_rows( $selector, $post_id = null, $object_type = null ) {
     global $jscfr_row_state;
 
     $info = JSCFR_Plugin::resolve_field( $selector );
@@ -161,24 +200,40 @@ function jscfr_have_rows( $selector, $post_id = null ) {
         return false;
     }
 
-    // Initialize on first call
-    if ( ! $jscfr_row_state['active'] || $jscfr_row_state['grp_id'] !== $info['group_id'] ) {
+    // Resolve context. Explicit args win; otherwise auto-detect from current request.
+    if ( null === $object_type ) {
+        if ( 'options' === $post_id || 'option' === $post_id ) {
+            $object_type = 'options';
+        } elseif ( null === $post_id ) {
+            list( $post_id, $object_type ) = jscfr_resolve_current_object();
+        } else {
+            $object_type = 'post';
+        }
+    }
+
+    // Initialize on first call OR when context (group/post/type) changes
+    $needs_init = ! $jscfr_row_state['active']
+        || $jscfr_row_state['grp_id'] !== $info['group_id']
+        || ( isset( $jscfr_row_state['post_id'] ) && $jscfr_row_state['post_id'] !== $post_id )
+        || ( isset( $jscfr_row_state['object_type'] ) && $jscfr_row_state['object_type'] !== $object_type );
+
+    if ( $needs_init ) {
         // v5: read group rows from individual meta (has v4 blob fallback)
-        $obj_type = ( 'options' === $post_id || 'option' === $post_id ) ? 'options' : 'post';
-        $rows = JSCFR_Plugin::get_field_value( $selector, $post_id, $obj_type );
-        if ( ! is_array( $rows ) || empty( $rows ) ) {
-            // Fallback: v4 blob path
+        $rows = JSCFR_Plugin::get_field_value( $selector, $post_id, $object_type );
+        if ( ( ! is_array( $rows ) || empty( $rows ) ) && in_array( $object_type, array( 'post', 'options' ), true ) ) {
+            // Fallback: v4 blob path (post/options only — no blob storage for term/user/comment)
             $rows = jscfr_get_group( $info['fg_id'], $info['tab_id'], $info['group_id'], $post_id );
         }
         $jscfr_row_state = array(
-            'active'  => true,
-            'rows'    => is_array( $rows ) ? $rows : array(),
-            'index'   => -1,
-            'current' => null,
-            'fg_id'   => $info['fg_id'],
-            'tab_id'  => $info['tab_id'],
-            'grp_id'  => $info['group_id'],
-            'post_id' => $post_id,
+            'active'      => true,
+            'rows'        => is_array( $rows ) ? $rows : array(),
+            'index'       => -1,
+            'current'     => null,
+            'fg_id'       => $info['fg_id'],
+            'tab_id'      => $info['tab_id'],
+            'grp_id'      => $info['group_id'],
+            'post_id'     => $post_id,
+            'object_type' => $object_type,
         );
     }
 
@@ -195,15 +250,27 @@ function jscfr_have_rows( $selector, $post_id = null ) {
 
 /**
  * Advance to the next row.
+ *
+ * Returns the new current row (truthy) on success, or false when there are no more rows.
+ * Supports both patterns:
+ *   while ( jscfr_have_rows( 'g' ) ) { jscfr_the_row(); ... }
+ *   while ( jscfr_the_row() ) { ... }   // requires prior jscfr_have_rows() call
  */
 function jscfr_the_row() {
     global $jscfr_row_state;
     if ( ! $jscfr_row_state['active'] ) {
-        return;
+        return false;
     }
     $jscfr_row_state['index']++;
     $idx = $jscfr_row_state['index'];
-    $jscfr_row_state['current'] = isset( $jscfr_row_state['rows'][ $idx ] ) ? $jscfr_row_state['rows'][ $idx ] : array();
+    if ( ! isset( $jscfr_row_state['rows'][ $idx ] ) ) {
+        $jscfr_row_state['active']  = false;
+        $jscfr_row_state['current'] = null;
+        return false;
+    }
+    $jscfr_row_state['current'] = $jscfr_row_state['rows'][ $idx ];
+    // Return non-empty array (truthy) or sentinel `true` for an empty row so loop continues.
+    return ! empty( $jscfr_row_state['current'] ) ? $jscfr_row_state['current'] : true;
 }
 
 /**

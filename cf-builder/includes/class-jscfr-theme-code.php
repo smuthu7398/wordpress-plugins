@@ -96,18 +96,18 @@ if ( ! class_exists( 'JSCFR_Theme_Code' ) ) {
                         continue;
                     }
 
+                    $group_selector = $this->jscfr_escape_single( $group_name );
                     $lines[] = '// ' . $group_label . ' (Repeater)';
-                    $lines[] = 'if ( jscfr_have_rows( \'' . $this->jscfr_escape_single( $group_name ) . '\' ) ) {';
-                    $lines[] = '    while ( jscfr_the_row() ) {';
+                    $lines[] = 'while ( jscfr_have_rows( \'' . $group_selector . '\' ) ) {';
+                    $lines[] = '    jscfr_the_row();';
 
                     foreach ( $group_fields as $field ) {
                         $field_lines = $this->jscfr_generate_field_code( $field, true );
                         foreach ( $field_lines as $fl ) {
-                            $lines[] = '        ' . $fl;
+                            $lines[] = '    ' . $fl;
                         }
                     }
 
-                    $lines[] = '    }';
                     $lines[] = '}';
                     $lines[] = '';
                 }

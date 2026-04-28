@@ -25,6 +25,7 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
             add_action( 'admin_menu', array( $this, 'add_menu' ) );
             add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
             add_action( 'wp_ajax_jscfr_save_field_group', array( $this, 'ajax_save_field_group' ) );
+            add_action( 'wp_ajax_jscfr_clear_cache', array( $this, 'ajax_clear_cache' ) );
             add_action( 'wp_ajax_jscfr_delete_field_group', array( $this, 'ajax_delete_field_group' ) );
             add_action( 'wp_ajax_jscfr_trash_field_group', array( $this, 'ajax_trash_field_group' ) );
             add_action( 'wp_ajax_jscfr_restore_field_group', array( $this, 'ajax_restore_field_group' ) );
@@ -507,6 +508,9 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
                         <span class="jscfr-topbar-post-badge"><?php esc_html_e( 'Post', 'jscfr' ); ?></span>
                     </div>
                     <div class="jscfr-topbar-right">
+                        <button type="button" class="jscfr-topbar-btn jscfr-topbar-btn--outline" id="jscfr-clear-cache-btn" title="<?php esc_attr_e( 'Clear the field-index cache. Use after direct DB edits or plugin updates.', 'jscfr' ); ?>">
+                            <span class="dashicons dashicons-update"></span> <?php esc_html_e( 'Clear Cache', 'jscfr' ); ?>
+                        </button>
                         <?php if ( ! $is_new ) : ?>
                         <button type="button" class="jscfr-topbar-btn jscfr-topbar-btn--outline" id="jscfr-get-code-btn">
                             <span class="dashicons dashicons-editor-code"></span> <?php esc_html_e( 'Get Code', 'jscfr' ); ?>
@@ -1174,6 +1178,21 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
         /* ============================================================= */
         /*  AJAX handlers                                                 */
         /* ============================================================= */
+        /**
+         * Clear the field-index transient cache.
+         * Useful after direct DB edits to jscfr_field_config or after a plugin upgrade.
+         */
+        public function ajax_clear_cache() {
+            check_ajax_referer( JSCFR_BUILDER_NONCE, 'nonce' );
+            if ( ! current_user_can( 'manage_options' ) ) {
+                wp_send_json_error( 'Unauthorized' );
+            }
+            JSCFR_Plugin::bust_field_index_cache();
+            wp_send_json_success( array(
+                'message' => __( 'Field index cache cleared.', 'jscfr' ),
+            ) );
+        }
+
         public function ajax_save_field_group() {
             check_ajax_referer( JSCFR_BUILDER_NONCE, 'nonce' );
             if ( ! current_user_can( 'manage_options' ) ) {
@@ -1406,6 +1425,49 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
         /* ============================================================= */
         /*  Sanitize — handles all v4 field properties                    */
         /* ============================================================= */
+        /**
+         * Walk the cleaned tabs/groups/fields, ensuring group + field names are
+         * globally unique within the field group. Mutates $clean in place.
+         */
+        private function jscfr_dedupe_names( &$clean ) {
+            $seen_groups = array();
+            $seen_fields = array();
+            $unique = function ( $base, &$seen ) {
+                if ( '' === $base ) return $base;
+                if ( ! isset( $seen[ $base ] ) ) {
+                    $seen[ $base ] = 1;
+                    return $base;
+                }
+                $n = ++$seen[ $base ];
+                $candidate = $base . '_' . $n;
+                while ( isset( $seen[ $candidate ] ) ) {
+                    $n++;
+                    $candidate = $base . '_' . $n;
+                }
+                $seen[ $candidate ] = 1;
+                return $candidate;
+            };
+
+            if ( empty( $clean['tabs'] ) ) return;
+            foreach ( $clean['tabs'] as &$tab ) {
+                if ( empty( $tab['groups'] ) ) continue;
+                foreach ( $tab['groups'] as &$group ) {
+                    if ( ! empty( $group['name'] ) ) {
+                        $group['name'] = $unique( $group['name'], $seen_groups );
+                    }
+                    if ( empty( $group['fields'] ) ) continue;
+                    foreach ( $group['fields'] as &$field ) {
+                        if ( ! empty( $field['name'] ) ) {
+                            $field['name'] = $unique( $field['name'], $seen_fields );
+                        }
+                    }
+                    unset( $field );
+                }
+                unset( $group );
+            }
+            unset( $tab );
+        }
+
         private function sanitize_field_group( $fg ) {
             $valid_types = array_keys( JSCFR_Plugin::get_field_types() );
 
@@ -1459,6 +1521,11 @@ if ( ! class_exists( 'JSCFR_Builder' ) ) {
                     $clean['tabs'][] = $ct;
                 }
             }
+
+            // Deduplicate group + field names across the entire field group.
+            // Two groups (or two fields) with the same name cause silent data overwrites
+            // because per-name meta keys collide. Append _2, _3... on conflict.
+            $this->jscfr_dedupe_names( $clean );
 
             if ( isset( $fg['location_rules'] ) && is_array( $fg['location_rules'] ) ) {
                 foreach ( $fg['location_rules'] as $or_group ) {

@@ -185,6 +185,16 @@
             renumber($(this));
         });
 
+        /* Collapsed-default: keep only the first clone row expanded on initial load. */
+        $('.jscfr-meta-wrap.jscfr-collapsed-default').each(function () {
+            $(this).find('.jscfr-group-block').each(function () {
+                var $rows = $(this).find('.jscfr-clones > .jscfr-clone-row');
+                if ($rows.length > 1) {
+                    $rows.first().addClass('jscfr-expanded');
+                }
+            });
+        });
+
         // Initial conditional logic evaluation
         evaluateConditionalLogic();
 
@@ -414,6 +424,10 @@
             });
 
             $clones.append($newRow);
+            // In collapsed-default mode, expand the newly added row so user can fill it.
+            if ($block.closest('.jscfr-meta-wrap').hasClass('jscfr-collapsed-default')) {
+                $newRow.addClass('jscfr-expanded');
+            }
             renumber($block);
             initColorPickers($newRow);
             initSortable();
@@ -433,10 +447,17 @@
             });
         });
 
-        /* Toggle clone */
+        /* Toggle clone — picks the right class depending on the active mode.
+           collapsed-default mode uses .jscfr-expanded (opt-in via group setting);
+           default mode uses .jscfr-collapsed (per-row collapse). */
         $(document).on('click.jscfr', '.jscfr-clone-toggle', function (e) {
             e.preventDefault();
-            $(this).closest('.jscfr-clone-row').toggleClass('jscfr-collapsed');
+            var $row = $(this).closest('.jscfr-clone-row');
+            if ($row.closest('.jscfr-meta-wrap').hasClass('jscfr-collapsed-default')) {
+                $row.toggleClass('jscfr-expanded');
+            } else {
+                $row.toggleClass('jscfr-collapsed');
+            }
         });
 
         /* ---- Range slider ---- */
